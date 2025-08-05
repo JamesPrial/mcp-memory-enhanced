@@ -11,7 +11,7 @@ export default [
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module',
-        project: './tsconfig.json'
+        project: './tsconfig.eslint.json'
       },
       globals: {
         console: 'readonly',
@@ -23,7 +23,8 @@ export default [
         clearInterval: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
-        Promise: 'readonly'
+        Promise: 'readonly',
+        global: 'readonly'
       }
     },
     plugins: {
@@ -33,11 +34,11 @@ export default [
       ...typescript.configs.recommended.rules,
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-console': 'off'
     }
   },
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '*.js', '*.cjs', '*.mjs']
+    ignores: ['dist/', 'node_modules/', 'coverage/', '*.js', '*.cjs', '*.mjs', 'src/**/dist/', 'src/**/dist/**/*']
   }
 ];

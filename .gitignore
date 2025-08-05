@@ -292,6 +292,16 @@ cython_debug/
 
 .DS_Store
 
+# Test databases
+:memory:
+*:memory:*
+test.db
+test.db-shm
+test.db-wal
+*.test.db
+*.test.db-shm
+*.test.db-wal
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

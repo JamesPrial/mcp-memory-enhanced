@@ -43,11 +43,11 @@ export class JSONStorage implements IStorageBackend {
       return lines.reduce((graph: KnowledgeGraph, line) => {
         const item = JSON.parse(line);
         if (item.type === "entity") {
-          const { type, ...entity } = item;
+          const { type: _type, ...entity } = item;
           graph.entities.push(entity as Entity);
         }
         if (item.type === "relation") {
-          const { type, ...relation } = item;
+          const { type: _type, ...relation } = item;
           graph.relations.push(relation as Relation);
         }
         return graph;
@@ -193,7 +193,7 @@ export class JSONStorage implements IStorageBackend {
     try {
       const stats = await fs.stat(this.filePath);
       storageSize = stats.size;
-    } catch (error) {
+    } catch {
       // File might not exist yet
     }
 

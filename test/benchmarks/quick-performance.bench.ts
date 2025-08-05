@@ -1,5 +1,4 @@
-import { describe, bench, beforeAll, afterAll } from 'vitest';
-import { IStorageBackend } from '../../storage/interface.js';
+import { describe, bench } from 'vitest';
 import { JSONStorage } from '../../storage/json-storage.js';
 import { SQLiteStorage } from '../../storage/sqlite-storage.js';
 import { Entity, Relation } from '../../types.js';
