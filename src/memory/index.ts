@@ -14,7 +14,8 @@ import { Entity, Relation } from './types.js';
 let knowledgeGraphManager: KnowledgeGraphManager;
 
 async function initializeStorage() {
-  const storage = await createStorageFromEnv();
+  const storage = createStorageFromEnv();
+  await storage.initialize();
   knowledgeGraphManager = new KnowledgeGraphManager(storage);
   
   // Log storage type for debugging
