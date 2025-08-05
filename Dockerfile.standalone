@@ -64,13 +64,18 @@ ENV NODE_ENV=production
 ENV STORAGE_TYPE=sqlite
 ENV STORAGE_PATH=/data
 ENV PORT=6970
+ENV HTTP_PORT=3000
 
-# Health check
+# Health check - use different port based on transport type
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:6970/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
+  CMD sh -c 'if [ "$TRANSPORT_TYPE" = "http" ] || [ "$TRANSPORT_TYPE" = "sse" ]; then \
+    node -e "require(\"http\").get(\"http://localhost:${HTTP_PORT:-3000}/health\", (res) => process.exit(res.statusCode === 200 ? 0 : 1))"; \
+  else \
+    node -e "require(\"http\").get(\"http://localhost:${PORT:-6970}/health\", (res) => process.exit(res.statusCode === 200 ? 0 : 1))"; \
+  fi'
 
-# Expose port
-EXPOSE 6970
+# Expose ports
+EXPOSE 6970 3000
 
 # Volume for persistent data
 VOLUME ["/data"]

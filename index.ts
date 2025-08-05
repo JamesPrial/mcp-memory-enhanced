@@ -261,6 +261,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
+  // Check if HTTP/SSE transport is requested
+  const transportType = process.env.TRANSPORT_TYPE?.toLowerCase();
+  if (transportType === 'http' || transportType === 'sse') {
+    // Use dynamic import for HTTP server
+    const { default: runHttpServer } = await import('./http-server.js');
+    runHttpServer();
+    return;
+  }
+  
   // Initialize storage before starting server
   await initializeStorage();
   
