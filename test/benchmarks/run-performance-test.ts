@@ -40,9 +40,9 @@ function generateTestData(size: number): { entities: Entity[], relations: Relati
 
 // Measure time for an operation
 async function measureTime(name: string, fn: () => Promise<void>): Promise<number> {
-  const start = performance.now();
+  const start = Date.now();
   await fn();
-  const end = performance.now();
+  const end = Date.now();
   const time = end - start;
   console.log(`${name}: ${time.toFixed(2)}ms`);
   return time;

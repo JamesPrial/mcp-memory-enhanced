@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { IStorageBackend } from '../../../storage/interface.js';
 import { JSONStorage } from '../../../storage/json-storage.js';
 import { SQLiteStorage } from '../../../storage/sqlite-storage.js';

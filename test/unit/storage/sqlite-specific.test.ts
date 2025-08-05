@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SQLiteStorage } from '../../../storage/sqlite-storage.js';
-import { Entity, Relation } from '../../../types.js';
+import { Entity } from '../../../types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -19,7 +19,7 @@ describe('SQLite-Specific Features', () => {
     await storage.close();
     try {
       await fs.unlink(testFile);
-    } catch (e) {
+    } catch {
       // Ignore if file doesn't exist
     }
   });

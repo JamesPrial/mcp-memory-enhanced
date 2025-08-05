@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
 import { promises as fs } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { JSONStorage } from './storage/json-storage.js';
 import { SQLiteStorage } from './storage/sqlite-storage.js';
 import { IStorageConfig } from './storage/interface.js';
@@ -81,7 +79,6 @@ async function migrateJSONToSQLite(
     if (options.verify) {
       console.log('\n🔍 Verifying migration...');
       
-      const sqliteGraph = await sqliteStorage.loadGraph();
       const sqliteStats = await sqliteStorage.getStats();
 
       const entitiesMatch = sqliteStats.entityCount === jsonStats.entityCount;

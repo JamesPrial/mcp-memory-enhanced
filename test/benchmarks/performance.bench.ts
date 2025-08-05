@@ -185,7 +185,7 @@ describe('Memory Usage Comparison', () => {
       await storage.createRelations(relations);
       
       // Force garbage collection if available
-      if (global.gc) {
+      if (typeof global !== 'undefined' && global.gc) {
         global.gc();
       }
       
@@ -207,7 +207,7 @@ describe('Memory Usage Comparison', () => {
       await storage.createRelations(relations);
       
       // Force garbage collection if available
-      if (global.gc) {
+      if (typeof global !== 'undefined' && global.gc) {
         global.gc();
       }
       

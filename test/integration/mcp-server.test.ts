@@ -1,20 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { spawn, ChildProcess } from 'child_process';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { tmpdir } from 'os';
 
-interface MCPToolResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-}
 
 describe('MCP Server Integration Tests', () => {
-  let serverProcess: ChildProcess;
   let client: Client;
   let tempDir: string;
 
@@ -34,14 +26,10 @@ describe('MCP Server Integration Tests', () => {
       env.SQLITE_PATH = path.join(tempDir, `test-memory-${Date.now()}-${Math.random()}.db`);
     }
 
-    // Start the server process
+    // Start the server process with stdio transport
     const serverPath = path.join(process.cwd(), 'dist', 'index.js');
-    serverProcess = spawn('node', [serverPath], {
-      env,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    // Create client transport
+    
+    // Create client transport that will spawn the server
     const transport = new StdioClientTransport({
       command: 'node',
       args: [serverPath],
@@ -65,10 +53,6 @@ describe('MCP Server Integration Tests', () => {
   async function stopServer() {
     if (client) {
       await client.close();
-    }
-    if (serverProcess) {
-      serverProcess.kill();
-      await new Promise(resolve => setTimeout(resolve, 100));
     }
     if (tempDir) {
       await fs.rm(tempDir, { recursive: true, force: true });

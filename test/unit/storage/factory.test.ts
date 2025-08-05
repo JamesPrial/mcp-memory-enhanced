@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createStorage, createStorageFromEnv } from '../../../storage/factory.js';
 import { JSONStorage } from '../../../storage/json-storage.js';
 import { SQLiteStorage } from '../../../storage/sqlite-storage.js';
