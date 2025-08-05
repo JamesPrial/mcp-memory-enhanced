@@ -9,6 +9,7 @@ import {
 import { KnowledgeGraphManager } from './knowledge-graph-manager.js';
 import { createStorageFromEnv } from './storage/factory.js';
 import { Entity, Relation } from './types.js';
+import { startHealthServer } from './health-server.js';
 
 // Initialize storage backend and knowledge graph manager
 let knowledgeGraphManager: KnowledgeGraphManager;
@@ -262,6 +263,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   // Initialize storage before starting server
   await initializeStorage();
+  
+  // Start health check server if port is specified
+  const healthPort = parseInt(process.env.PORT || '6970', 10);
+  if (!isNaN(healthPort) && healthPort > 0) {
+    startHealthServer(healthPort, knowledgeGraphManager);
+  }
   
   const transport = new StdioServerTransport();
   await server.connect(transport);

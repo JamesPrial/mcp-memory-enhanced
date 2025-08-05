@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+*/node_modules/
+*/*/node_modules/
+
+# Test files
+test/
+*/test/
+*/*/test/
+*.test.ts
+*.bench.ts
+
+# Build output
+dist/
+*/dist/
+*/*/dist/
+
+# Coverage reports
+coverage/
+*/coverage/
+*/*/coverage/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+!README-ENHANCED.md
+
+# Development files
+*.log
+.env
+.env.*
+*.db
+*.sqlite
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Other MCP servers (we only need memory)
+src/everything/
+src/fetch/
+src/filesystem/
+src/git/
+src/sequentialthinking/
+src/time/
