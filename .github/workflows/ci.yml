@@ -22,19 +22,16 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: src/memory/package-lock.json
+          cache-dependency-path: package-lock.json
       
       - name: Install dependencies
-        working-directory: src/memory
         run: npm ci
       
       - name: Run ESLint
-        working-directory: src/memory
         run: npm run lint
         continue-on-error: true
       
       - name: Run TypeScript type checking
-        working-directory: src/memory
         run: npm run typecheck
 
   test:
@@ -52,14 +49,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: src/memory/package-lock.json
+          cache-dependency-path: package-lock.json
       
       - name: Install dependencies
-        working-directory: src/memory
         run: npm ci
       
       - name: Run tests
-        working-directory: src/memory
         env:
           STORAGE_TYPE: ${{ matrix.storage-type }}
         run: npm test
@@ -70,7 +65,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: src/memory/coverage/
+          path: coverage/
 
   build:
     name: Build
@@ -84,18 +79,15 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: src/memory/package-lock.json
+          cache-dependency-path: package-lock.json
       
       - name: Install dependencies
-        working-directory: src/memory
         run: npm ci
       
       - name: Build project
-        working-directory: src/memory
         run: npm run build
       
       - name: Verify build output
-        working-directory: src/memory
         run: |
           if [ ! -d "dist" ]; then
             echo "Build failed: dist directory not found"
@@ -120,8 +112,8 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          context: src/memory
-          file: src/memory/Dockerfile.standalone
+          context: .
+          file: Dockerfile.standalone
           platforms: linux/amd64
           tags: mcp-memory-enhanced:test
           cache-from: type=gha
@@ -146,7 +138,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
-          scan-ref: 'src/memory'
+          scan-ref: '.'
           severity: 'CRITICAL,HIGH'
           format: 'sarif'
           output: 'trivy-results.sarif'

@@ -3,7 +3,7 @@ version: '3.8'
 services:
   mcp-memory-enhanced:
     build:
-      context: src/memory
+      context: .
       dockerfile: Dockerfile.standalone
     image: mcp-memory-enhanced:latest
     container_name: mcp-memory-enhanced
