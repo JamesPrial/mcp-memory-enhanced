@@ -19,13 +19,13 @@ export class StorageFactory implements IStorageFactory {
         break;
       
       case 'postgres':
-        throw new Error('PostgreSQL storage not yet implemented');
+        throw new Error('PostgreSQL storage backend not yet implemented');
       
       case 'custom':
-        throw new Error('Custom storage requires providing a backend instance');
+        throw new Error('Custom storage backends not yet implemented');
       
       default:
-        throw new Error(`Unknown storage type: ${config.type}`);
+        throw new Error(`Unsupported storage type: ${config.type}`);
     }
 
     // Initialize the backend
@@ -36,13 +36,34 @@ export class StorageFactory implements IStorageFactory {
 }
 
 /**
+ * Create a storage backend based on configuration.
+ * This is a convenience function that doesn't auto-initialize.
+ */
+export function createStorage(config: IStorageConfig): IStorageBackend {
+  switch (config.type) {
+    case 'json':
+      return new JSONStorage(config);
+    
+    case 'sqlite':
+      return new SQLiteStorage(config);
+    
+    case 'postgres':
+      throw new Error('PostgreSQL storage backend not yet implemented');
+    
+    case 'custom':
+      throw new Error('Custom storage backends not yet implemented');
+    
+    default:
+      throw new Error(`Unsupported storage type: ${config.type}`);
+  }
+}
+
+/**
  * Create a storage backend from environment configuration.
  */
-export async function createStorageFromEnv(): Promise<IStorageBackend> {
-  const factory = new StorageFactory();
-  
+export function createStorageFromEnv(): IStorageBackend {
   // Determine storage type from environment
-  const storageType = process.env.STORAGE_TYPE || 'json';
+  const storageType = (process.env.STORAGE_TYPE || 'json').toLowerCase().trim();
   
   // Build configuration based on storage type
   const config: IStorageConfig = {
@@ -52,7 +73,7 @@ export async function createStorageFromEnv(): Promise<IStorageBackend> {
   // Add type-specific configuration
   switch (storageType) {
     case 'json':
-      config.filePath = process.env.MEMORY_FILE_PATH;
+      config.filePath = process.env.JSON_PATH || process.env.MEMORY_FILE_PATH || 'memory.jsonl';
       break;
     
     case 'sqlite':
@@ -60,9 +81,12 @@ export async function createStorageFromEnv(): Promise<IStorageBackend> {
       break;
     
     case 'postgres':
-      config.connectionString = process.env.DATABASE_URL;
-      break;
+      config.connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+      throw new Error('PostgreSQL storage backend not yet implemented');
+    
+    default:
+      throw new Error(`Unsupported storage type: ${storageType}`);
   }
 
-  return factory.create(config);
+  return createStorage(config);
 }
