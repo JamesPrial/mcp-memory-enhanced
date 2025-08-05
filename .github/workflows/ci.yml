@@ -7,6 +7,10 @@ on:
     branches: [ main, develop ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   lint-and-type-check:
     name: Lint and Type Check
@@ -29,7 +33,6 @@ jobs:
       
       - name: Run ESLint
         run: npm run lint
-        continue-on-error: true
       
       - name: Run TypeScript type checking
         run: npm run typecheck
@@ -58,7 +61,6 @@ jobs:
         env:
           STORAGE_TYPE: ${{ matrix.storage-type }}
         run: npm test
-        continue-on-error: true
       
       - name: Upload coverage reports
         if: matrix.node-version == 20 && matrix.storage-type == 'sqlite'
@@ -119,10 +121,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: false
+          load: true
       
       - name: Test Docker image
         run: |
-          docker run --rm -e STORAGE_TYPE=sqlite mcp-memory-enhanced:test node dist/index.js --version || true
+          docker run --rm -e STORAGE_TYPE=sqlite mcp-memory-enhanced:test node dist/index.js --version
           docker run --rm -e PORT=6970 -p 6970:6970 -d --name test-container mcp-memory-enhanced:test
           sleep 5
           curl -f http://localhost:6970/health || exit 1
