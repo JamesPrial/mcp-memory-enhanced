@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  mcp-memory-http:
+    build:
+      context: .
+      dockerfile: src/memory/Dockerfile
+    image: mcp-memory-enhanced:http
+    container_name: mcp-memory-http
+    restart: unless-stopped
+    ports:
+      - "6970:6970"
+    environment:
+      # Transport configuration
+      - TRANSPORT_TYPE=http          # Enable HTTP/SSE transport
+      
+      # Storage configuration
+      - STORAGE_TYPE=sqlite          # Options: json, sqlite
+      - SQLITE_PATH=/data/memory.db  # SQLite database path
+      
+      # Server configuration
+      - PORT=6970                    # HTTP server port
+      - NODE_ENV=production          # Node environment
+      
+    volumes:
+      - ./data:/data                 # Persistent storage
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:6970/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Example client service that uses the HTTP transport
+  claude-code-client:
+    image: alpine:latest
+    command: |
+      sh -c "
+      echo 'To connect Claude Code to this server:'
+      echo 'claude mcp add --transport sse memory-enhanced http://mcp-memory-http:6970/mcp'
+      echo ''
+      echo 'Or from outside Docker network:'
+      echo 'claude mcp add --transport sse memory-enhanced http://localhost:6970/mcp'
+      tail -f /dev/null
+      "
+    depends_on:
+      - mcp-memory-http
+
+# Volumes for persistent data
+volumes:
+  data:
+    driver: local

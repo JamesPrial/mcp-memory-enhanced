@@ -16,9 +16,14 @@ COPY --from=builder /app/package.json /app/package.json
 COPY --from=builder /app/package-lock.json /app/package-lock.json
 
 ENV NODE_ENV=production
+ENV TRANSPORT_TYPE=stdio
+ENV PORT=6970
 
 WORKDIR /app
 
 RUN npm ci --ignore-scripts --omit-dev
+
+# Expose port for HTTP transport
+EXPOSE 6970
 
 ENTRYPOINT ["node", "dist/index.js"]

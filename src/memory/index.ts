@@ -11,6 +11,19 @@ import { createStorageFromEnv } from './storage/factory.js';
 import { Entity, Relation } from './types.js';
 import { startHealthServer } from './health-server.js';
 
+// Check transport type
+const TRANSPORT_TYPE = process.env.TRANSPORT_TYPE || 'stdio';
+
+if (TRANSPORT_TYPE === 'http' || TRANSPORT_TYPE === 'sse') {
+  // Launch HTTP server instead
+  import('./http-server.js').then(() => {
+    console.error('HTTP server module loaded');
+  }).catch(err => {
+    console.error('Failed to start HTTP server:', err);
+    process.exit(1);
+  });
+} else {
+
 // Initialize storage backend and knowledge graph manager
 let knowledgeGraphManager: KnowledgeGraphManager;
 
@@ -275,7 +288,8 @@ async function main() {
   console.error("Knowledge Graph MCP Server running on stdio");
 }
 
-main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
-});
+  main().catch((error) => {
+    console.error("Fatal error in main():", error);
+    process.exit(1);
+  });
+}
