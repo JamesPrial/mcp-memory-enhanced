@@ -166,7 +166,7 @@ describe('SSE Transport E2E Tests', () => {
               },
               id: 1,
             });
-          } catch (error) {
+          } catch {
             // The HTTP endpoint might not respond directly when in SSE mode
             console.log('Expected behavior: HTTP returns error when session is in SSE mode');
           }
@@ -196,7 +196,7 @@ describe('SSE Transport E2E Tests', () => {
         const originalOnMessage = eventSource.onmessage;
         
         // Override the event source to capture keep-alive
-        (eventSource as any).onmessage = (event: MessageEvent) => {
+        (eventSource as any).onmessage = (event: any) => {
           events.push(event.data || 'keep-alive');
           if (originalOnMessage) originalOnMessage(event);
         };
@@ -293,7 +293,7 @@ describe('SSE Transport E2E Tests', () => {
       ]);
 
       const sessionIds = sessions.map(r => r.data.sessionId);
-      const eventSources: EventSourcePolyfill[] = [];
+      const eventSources: any[] = [];
 
       // Connect to all sessions via SSE
       await Promise.all(sessionIds.map(id => 
@@ -308,7 +308,7 @@ describe('SSE Transport E2E Tests', () => {
 
       // All should be connected
       eventSources.forEach(es => {
-        expect([EventSourcePolyfill.OPEN, EventSourcePolyfill.CONNECTING]).toContain(es.readyState);
+        expect([1, 0]).toContain(es.readyState); // OPEN=1, CONNECTING=0
       });
 
       // Clean up
@@ -327,11 +327,11 @@ describe('SSE Transport E2E Tests', () => {
 
       // Connect to SSE
       const eventSource = new EventSourcePolyfill(`${BASE_URL}/session/${sessionId}/events`);
-      let errorReceived = false;
+      let _errorReceived = false;
 
       await new Promise<void>((resolve) => {
         eventSource.onerror = () => {
-          errorReceived = true;
+          _errorReceived = true;
         };
 
         // Wait a bit then resolve
