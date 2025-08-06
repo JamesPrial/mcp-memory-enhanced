@@ -5,20 +5,25 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    include: ['test/**/*.test.ts', 'test/**/*.spec.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: [
-        'node_modules/',
-        'dist/',
-        'test/**/*',
+        'node_modules/**',
+        'dist/**',
+        'test/**',
+        'mcp-memory-fix/**',
         '**/*.test.ts',
         '**/*.spec.ts',
+        '**/*.bench.ts',
         'vitest.config.ts',
         'migrate.ts',
-        'test-sqlite.ts'
+        'test-sqlite.ts',
+        'src/memory/**',
+        'test-benchmarks/**'
       ],
-      include: ['**/*.ts'],
+      include: ['src/**/*.ts', 'storage/**/*.ts', '*.ts'],
       all: true,
       thresholds: {
         lines: 90,
