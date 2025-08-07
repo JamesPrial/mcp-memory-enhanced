@@ -37,6 +37,16 @@ async function migrateJSONToSQLite(
 
     // Load data from JSON
     console.log('📖 Reading JSON data...');
+    
+    // Check if JSON file exists before proceeding
+    if (jsonConfig.filePath) {
+      try {
+        await fs.access(jsonConfig.filePath);
+      } catch (error) {
+        throw new Error(`JSON file not found: ${jsonConfig.filePath}`);
+      }
+    }
+    
     const graph = await jsonStorage.loadGraph();
     const jsonStats = await jsonStorage.getStats();
     
