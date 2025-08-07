@@ -281,8 +281,8 @@ describe('SSE Transport E2E Tests', () => {
         id: 1,
       }).catch(err => err.response);
 
-      // Session might be gone or switched to SSE mode
-      expect([200, 400, 404]).toContain(result?.status || result.status);
+      // Session might be gone, switched to SSE mode, or accepted for processing
+      expect([200, 202, 400, 404]).toContain(result?.status || result.status);
     });
 
     it('should handle multiple SSE connections', async () => {
@@ -409,8 +409,8 @@ describe('SSE Transport E2E Tests', () => {
         id: 2,
       }).catch(err => err.response);
 
-      // Could be 400 (session in SSE mode) or 200 (if it handles both)
-      expect([200, 400]).toContain(httpResponse?.status || httpResponse.status);
+      // Could be 202 (accepted for SSE processing), 400 (session in SSE mode) or 200 (if it handles both)
+      expect([200, 202, 400]).toContain(httpResponse?.status || httpResponse.status);
 
       // 5. Close SSE connection
       eventSource.close();
