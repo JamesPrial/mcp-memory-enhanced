@@ -2,10 +2,11 @@
 
 [![CI](https://github.com/JamesPrial/mcp-memory-enhanced/actions/workflows/ci.yml/badge.svg)](https://github.com/JamesPrial/mcp-memory-enhanced/actions/workflows/ci.yml)
 [![Docker Build](https://github.com/JamesPrial/mcp-memory-enhanced/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/JamesPrial/mcp-memory-enhanced/actions/workflows/docker-publish.yml)
-[![Docker Image Version](https://img.shields.io/docker/v/jamesprial/mcp-memory-enhanced?sort=semver)](https://github.com/JamesPrial/mcp-memory-enhanced/pkgs/container/mcp-memory-enhanced)
+[![Version](https://img.shields.io/github/v/release/JamesPrial/mcp-memory-enhanced)](https://github.com/JamesPrial/mcp-memory-enhanced/releases)
+[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)](https://github.com/JamesPrial/mcp-memory-enhanced)
 [![License](https://img.shields.io/github/license/JamesPrial/mcp-memory-enhanced)](LICENSE)
 
-An enhanced fork of the official [MCP Memory Server](https://github.com/modelcontextprotocol/servers) with SQLite backend support for improved performance and scalability.
+An enhanced fork of the official [MCP Memory Server](https://github.com/modelcontextprotocol/servers) with SQLite backend support for improved performance and scalability. **Now at v1.0.0 - Production Ready!** 🚀
 
 ## 🚀 Features
 
@@ -38,6 +39,15 @@ docker run -d \
 ```
 
 ## 📦 Installation
+
+### From npm (via GitHub)
+```bash
+# Latest version
+npm install github:JamesPrial/mcp-memory-enhanced
+
+# Specific version
+npm install github:JamesPrial/mcp-memory-enhanced#v1.0.0
+```
 
 ### From Source
 ```bash
