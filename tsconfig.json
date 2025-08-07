@@ -33,6 +33,7 @@
     "src/memory/**/*",
     "test/**/*",
     "migrate.ts",
-    "mcp-memory-fix/**/*"
+    "mcp-memory-fix/**/*",
+    "mcp-memory-enhanced-repo/**/*"
   ]
 }
