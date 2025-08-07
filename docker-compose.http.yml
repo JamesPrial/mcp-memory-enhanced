@@ -1,35 +1,31 @@
 version: '3.8'
 
 services:
-  mcp-memory-enhanced:
+  mcp-memory-http:
     build:
       context: .
       dockerfile: Dockerfile.standalone
     image: mcp-memory-enhanced:latest
-    container_name: mcp-memory-enhanced
+    container_name: mcp-memory-http
     restart: unless-stopped
     ports:
-      - "6970:6970"
-      # For HTTP transport, also expose: - "3000:3000"
+      - "3000:3000"     # HTTP API port
+      - "6970:6970"     # Optional: Health monitoring port (if running dual mode)
     environment:
-      # Transport configuration (uncomment for HTTP mode)
-      # - TRANSPORT_TYPE=http       # Options: stdio (default), http, sse
-      # - HTTP_PORT=3000           # HTTP server port (when using http/sse transport)
+      # Transport configuration - CRITICAL FOR HTTP MODE
+      - TRANSPORT_TYPE=http         # Enable HTTP transport instead of stdio
+      - HTTP_PORT=3000             # HTTP server port
       
       # Storage configuration
-      - STORAGE_TYPE=sqlite           # Options: json, sqlite
-      - STORAGE_PATH=/data           # Data directory inside container
+      - STORAGE_TYPE=sqlite        # Options: json, sqlite
+      - STORAGE_PATH=/data        # Data directory inside container
       
       # SQLite specific settings
       - SQLITE_DB_NAME=knowledge.db  # Database filename
       - SQLITE_WAL_MODE=true         # Enable Write-Ahead Logging
       - SQLITE_BUSY_TIMEOUT=5000     # Busy timeout in ms
       
-      # JSON specific settings (if using JSON storage)
-      - JSON_FILE_NAME=knowledge-graph.jsonl  # JSON Lines filename
-      
       # Server configuration
-      - PORT=6970                    # Server port
       - NODE_ENV=production          # Node environment
       - LOG_LEVEL=info              # Logging level: debug, info, warn, error
       
@@ -46,7 +42,8 @@ services:
       - ./data:/data                 # Persistent storage
       - ./backups:/backups          # Backup directory (optional)
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:6970/health"]
+      # Updated health check for HTTP transport
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -73,3 +70,8 @@ volumes:
     driver: local
   backups:
     driver: local
+
+# Networks (optional - for integration with other services)
+networks:
+  default:
+    driver: bridge

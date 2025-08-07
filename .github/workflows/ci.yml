@@ -150,13 +150,62 @@ jobs:
           push: false
           load: true
       
-      - name: Test Docker image
+      - name: Test Docker image - stdio mode
         run: |
-          docker run --rm -e STORAGE_TYPE=sqlite mcp-memory-enhanced:test node dist/index.js --version
-          docker run --rm -e TRANSPORT_TYPE=http -e HTTP_PORT=3000 -e PORT=6970 -p 3000:3000 -p 6970:6970 -d --name test-container mcp-memory-enhanced:test
-          sleep 5
-          curl -f http://localhost:3000/health || exit 1
-          docker stop test-container
+          # Test basic container functionality (stdio mode - default)
+          docker run --rm -e STORAGE_TYPE=sqlite -e PORT=6970 -p 6970:6970 -d --name test-stdio mcp-memory-enhanced:test
+          
+          # Wait for health check to be available
+          echo "Waiting for health check endpoint..."
+          for i in {1..30}; do
+            if curl -f http://localhost:6970/health 2>/dev/null; then
+              echo "Health check passed!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Health check failed after 30 seconds"
+              docker logs test-stdio
+              docker stop test-stdio || true
+              exit 1
+            fi
+            sleep 1
+          done
+          
+          docker stop test-stdio
+      
+      - name: Test Docker image - HTTP mode
+        run: |
+          # Test HTTP transport mode
+          docker run --rm -e TRANSPORT_TYPE=http -e HTTP_PORT=3000 -e STORAGE_TYPE=sqlite \
+            -p 3000:3000 -d --name test-http mcp-memory-enhanced:test
+          
+          # Wait for HTTP server to be available
+          echo "Waiting for HTTP server..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3000/health 2>/dev/null; then
+              echo "HTTP server health check passed!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "HTTP server failed to start after 30 seconds"
+              docker logs test-http
+              docker stop test-http || true
+              exit 1
+            fi
+            sleep 1
+          done
+          
+          # Test session creation
+          SESSION_ID=$(curl -s -X POST http://localhost:3000/session | grep -o '"sessionId":"[^"]*' | cut -d'"' -f4)
+          if [ -z "$SESSION_ID" ]; then
+            echo "Failed to create session"
+            docker logs test-http
+            docker stop test-http || true
+            exit 1
+          fi
+          echo "Session created: $SESSION_ID"
+          
+          docker stop test-http
 
   security-scan:
     name: Security Scan
