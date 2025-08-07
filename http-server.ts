@@ -12,6 +12,7 @@ interface SessionData {
   server: Server;
   transport: HTTPTransport | SSETransport;
   lastActivity: number;
+  isSSE?: boolean;
 }
 
 const app = express();
@@ -78,7 +79,7 @@ class SSETransport implements Transport {
   private res?: express.Response;
   
   async send(message: JSONRPCMessage): Promise<void> {
-    if (this.res && !this.res.headersSent) {
+    if (this.res) {
       this.res.write(`data: ${JSON.stringify(message)}\n\n`);
     }
   }
@@ -157,8 +158,12 @@ app.post('/session/:sessionId/message', async (req, res) => {
     session.transport.setResponse(res);
     session.transport.handleMessage(message);
     // Response will be sent by the transport
+  } else if (session.transport instanceof SSETransport) {
+    // In SSE mode, handle the message and send response through SSE
+    session.transport.handleMessage(message);
+    res.status(202).json({ message: 'Message accepted for SSE processing' });
   } else {
-    res.status(400).json({ error: 'Session is in SSE mode' });
+    res.status(400).json({ error: 'Unknown transport mode' });
   }
 });
 
@@ -171,9 +176,15 @@ app.get('/session/:sessionId/events', async (req, res) => {
     return;
   }
   
-  // Switch to SSE transport
+  // Mark session as SSE mode
+  session.isSSE = true;
+  session.lastActivity = Date.now();
+  
+  // Create SSE transport and connect to server
   const sseTransport = new SSETransport();
   session.transport = sseTransport;
+  
+  // Connect the SSE transport to the server
   await session.server.connect(sseTransport);
   
   res.writeHead(200, {
@@ -185,6 +196,9 @@ app.get('/session/:sessionId/events', async (req, res) => {
   
   sseTransport.setResponse(res);
   
+  // Send initial connection event
+  res.write(':connected\n\n');
+  
   // Keep connection alive
   const keepAlive = setInterval(() => {
     res.write(':keep-alive\n\n');
@@ -193,7 +207,11 @@ app.get('/session/:sessionId/events', async (req, res) => {
   req.on('close', () => {
     clearInterval(keepAlive);
     sseTransport.close();
-    sessions.delete(sessionId);
+    // Don't delete the session here - let the explicit DELETE endpoint handle it
+    // Just mark it as no longer in SSE mode
+    if (session) {
+      session.isSSE = false;
+    }
   });
 });
 
@@ -202,6 +220,7 @@ app.delete('/session/:sessionId', (req, res) => {
   
   const session = sessions.get(sessionId);
   if (!session) {
+    console.error(`Session ${sessionId} not found for deletion. Available sessions:`, Array.from(sessions.keys()));
     res.status(404).json({ error: 'Session not found' });
     return;
   }

@@ -153,9 +153,9 @@ jobs:
       - name: Test Docker image
         run: |
           docker run --rm -e STORAGE_TYPE=sqlite mcp-memory-enhanced:test node dist/index.js --version
-          docker run --rm -e PORT=6970 -p 6970:6970 -d --name test-container mcp-memory-enhanced:test
+          docker run --rm -e TRANSPORT_TYPE=http -e HTTP_PORT=3000 -e PORT=6970 -p 3000:3000 -p 6970:6970 -d --name test-container mcp-memory-enhanced:test
           sleep 5
-          curl -f http://localhost:6970/health || exit 1
+          curl -f http://localhost:3000/health || exit 1
           docker stop test-container
 
   security-scan:
