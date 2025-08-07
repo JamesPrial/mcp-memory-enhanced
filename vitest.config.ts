@@ -21,7 +21,9 @@ export default defineConfig({
         'migrate.ts',
         'test-sqlite.ts',
         'src/memory/**',
-        'test-benchmarks/**'
+        'test-benchmarks/**',
+        'index.ts',
+        'http-server.ts'
       ],
       include: ['src/**/*.ts', 'storage/**/*.ts', '*.ts'],
       all: true,
