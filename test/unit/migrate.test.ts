@@ -600,4 +600,173 @@ describe('Migration Tool', () => {
       expect(jsonStats.size).toBeGreaterThan(0);
     });
   });
+
+  describe('Backup Functionality', () => {
+    it('should create backup when requested', async () => {
+      const jsonPath = path.join(testDir, 'backup-test.json');
+      const sqlitePath = path.join(testDir, 'backup-test.db');
+
+      const testData = {
+        entities: [{
+          name: 'Test',
+          entityType: 'test',
+          observations: ['obs1']
+        }]
+      };
+
+      await fs.writeFile(jsonPath, JSON.stringify(testData));
+
+      await migrateJSONToSQLite(jsonPath, sqlitePath, { backup: true });
+
+      // Check if backup file was created
+      const files = await fs.readdir(testDir);
+      const backupFiles = files.filter(f => f.startsWith('backup-test.json.backup-'));
+      expect(backupFiles.length).toBeGreaterThan(0);
+
+      // Verify backup content matches original
+      const backupPath = path.join(testDir, backupFiles[0]);
+      const backupContent = await fs.readFile(backupPath, 'utf-8');
+      expect(backupContent).toBe(JSON.stringify(testData));
+    });
+
+    it('should not create backup when not requested', async () => {
+      const jsonPath = path.join(testDir, 'no-backup-test.json');
+      const sqlitePath = path.join(testDir, 'no-backup-test.db');
+
+      const testData = {
+        entities: [{
+          name: 'Test',
+          entityType: 'test',
+          observations: ['obs1']
+        }]
+      };
+
+      await fs.writeFile(jsonPath, JSON.stringify(testData));
+
+      await migrateJSONToSQLite(jsonPath, sqlitePath, { backup: false });
+
+      // Check that no backup file was created
+      const files = await fs.readdir(testDir);
+      const backupFiles = files.filter(f => f.startsWith('no-backup-test.json.backup-'));
+      expect(backupFiles.length).toBe(0);
+    });
+  });
+
+  describe('Verification Edge Cases', () => {
+    it('should fail verification if entity is missing in SQLite', async () => {
+      const jsonPath = path.join(testDir, 'verify-missing.json');
+      const sqlitePath = path.join(testDir, 'verify-missing.db');
+
+      const testData = {
+        entities: [{
+          name: 'TestEntity',
+          entityType: 'test',
+          observations: ['obs1']
+        }]
+      };
+
+      await fs.writeFile(jsonPath, JSON.stringify(testData));
+
+      // Mock SQLiteStorage to simulate missing entity during verification
+      const { SQLiteStorage } = await import('../../storage/sqlite-storage.js');
+      const originalGetEntities = SQLiteStorage.prototype.getEntities;
+      
+      let callCount = 0;
+      SQLiteStorage.prototype.getEntities = async function(names: string[]) {
+        callCount++;
+        // First call during migration succeeds, second call during verify fails
+        if (callCount > 1 && names.includes('TestEntity')) {
+          return []; // Simulate entity not found
+        }
+        return originalGetEntities.call(this, names);
+      };
+
+      // Migration with verification should fail
+      await expect(
+        migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true })
+      ).rejects.toThrow("Entity 'TestEntity' not found in SQLite");
+
+      // Restore original method
+      SQLiteStorage.prototype.getEntities = originalGetEntities;
+    });
+
+    it('should fail verification if unique observations are lost', async () => {
+      const jsonPath = path.join(testDir, 'verify-obs-lost.json');
+      const sqlitePath = path.join(testDir, 'verify-obs-lost.db');
+
+      const testData = {
+        entities: [{
+          name: 'TestEntity',
+          entityType: 'test',
+          observations: ['obs1', 'obs2', 'obs3']
+        }]
+      };
+
+      await fs.writeFile(jsonPath, JSON.stringify(testData));
+
+      // Mock SQLiteStorage to simulate lost observations
+      const { SQLiteStorage } = await import('../../storage/sqlite-storage.js');
+      const originalGetEntities = SQLiteStorage.prototype.getEntities;
+      
+      let callCount = 0;
+      SQLiteStorage.prototype.getEntities = async function(names: string[]) {
+        callCount++;
+        const result = await originalGetEntities.call(this, names);
+        // During verification, return missing observations
+        if (callCount > 1 && result.length > 0) {
+          result[0].observations = ['obs1']; // Missing obs2 and obs3
+        }
+        return result;
+      };
+
+      // Migration with verification should fail
+      await expect(
+        migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true })
+      ).rejects.toThrow("Lost observation for entity 'TestEntity': obs2");
+
+      // Restore original method
+      SQLiteStorage.prototype.getEntities = originalGetEntities;
+    });
+
+    it('should pass verification with duplicate observations removed', async () => {
+      const jsonPath = path.join(testDir, 'verify-dedup.json');
+      const sqlitePath = path.join(testDir, 'verify-dedup.db');
+
+      const testData = {
+        entities: [{
+          name: 'TestEntity',
+          entityType: 'test',
+          observations: ['obs1', 'obs1', 'obs2', 'obs2'] // Duplicates
+        }]
+      };
+
+      await fs.writeFile(jsonPath, JSON.stringify(testData));
+
+      // Should not throw - deduplication is expected
+      const originalConsoleLog = console.log;
+      let dedupReported = false;
+      console.log = (...args) => {
+        const message = args.join(' ');
+        if (message.includes('duplicate observation(s) removed')) {
+          dedupReported = true;
+        }
+        originalConsoleLog(...args);
+      };
+
+      await migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true });
+
+      console.log = originalConsoleLog;
+      expect(dedupReported).toBe(true);
+
+      // Verify the entity has deduplicated observations
+      const { SQLiteStorage } = await import('../../storage/sqlite-storage.js');
+      const sqliteStorage = new SQLiteStorage({ type: 'sqlite', filePath: sqlitePath });
+      await sqliteStorage.initialize();
+      
+      const entities = await sqliteStorage.getEntities(['TestEntity']);
+      expect(entities[0].observations).toEqual(['obs1', 'obs2']);
+      
+      await sqliteStorage.close();
+    });
+  });
 });
