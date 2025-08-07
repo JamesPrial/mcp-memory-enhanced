@@ -137,34 +137,11 @@ async function migrateJSONToSQLite(
 }
 
 // CLI interface
+import { runCLI } from './migrate-cli.js';
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
-  
-  if (args.includes('--help') || args.includes('-h')) {
-    console.log('Usage: node migrate.js [options]');
-    console.log('\nOptions:');
-    console.log('  --json <path>     Path to JSON memory file (default: from env or memory.json)');
-    console.log('  --sqlite <path>   Path to SQLite database (default: from env or memory.db)');
-    console.log('  --backup          Create backup of JSON file before migration');
-    console.log('  --verify          Verify data integrity after migration');
-    console.log('  --help            Show this help message');
-    console.log('\nExample:');
-    console.log('  node migrate.js --json memory.json --sqlite memory.db --backup --verify');
-    process.exit(0);
-  }
-
-  const jsonIndex = args.indexOf('--json');
-  const sqliteIndex = args.indexOf('--sqlite');
-  
-  const jsonPath = jsonIndex >= 0 ? args[jsonIndex + 1] : undefined;
-  const sqlitePath = sqliteIndex >= 0 ? args[sqliteIndex + 1] : undefined;
-  
-  const options = {
-    backup: args.includes('--backup'),
-    verify: args.includes('--verify')
-  };
-
-  migrateJSONToSQLite(jsonPath, sqlitePath, options).catch(console.error);
+  runCLI(args);
 }
 
 export { migrateJSONToSQLite };

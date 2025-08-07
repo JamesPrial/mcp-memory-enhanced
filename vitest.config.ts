@@ -1,5 +1,8 @@
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'url';
 import path from 'path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
@@ -14,11 +17,12 @@ export default defineConfig({
         'dist/**',
         'test/**',
         'mcp-memory-fix/**',
+        'mcp-memory-enhanced-repo/**',
         '**/*.test.ts',
         '**/*.spec.ts',
         '**/*.bench.ts',
+        '**/*.cjs',
         'vitest.config.ts',
-        'migrate.ts',
         'test-sqlite.ts',
         'src/**',
         'coverage/**',
@@ -26,10 +30,13 @@ export default defineConfig({
       ],
       include: [
         'storage/**/*.ts',
+        'migrate.ts',
+        'migrate-cli.ts',
         'knowledge-graph-manager.ts',
         'server-factory.ts',
         'server-factory-schemas.ts',
         'health-server.ts',
+        'http-server.ts',
         'types.ts'
       ],
       thresholds: {
