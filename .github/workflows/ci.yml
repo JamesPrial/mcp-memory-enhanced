@@ -150,13 +150,30 @@ jobs:
           push: false
           load: true
       
-      - name: Test Docker image
+      - name: Test Docker image - stdio mode
         run: |
+          # Test basic functionality with stdio mode (default)
           docker run --rm -e STORAGE_TYPE=sqlite mcp-memory-enhanced:test node dist/index.js --version
-          docker run --rm -e TRANSPORT_TYPE=http -e HTTP_PORT=3000 -e PORT=6970 -p 3000:3000 -p 6970:6970 -d --name test-container mcp-memory-enhanced:test
+          
+          # Test that the container can start and respond to health checks in stdio mode
+          docker run --rm -e STORAGE_TYPE=sqlite -e PORT=6970 -p 6970:6970 -d --name test-stdio mcp-memory-enhanced:test
           sleep 5
-          curl -f http://localhost:3000/health || exit 1
-          docker stop test-container
+          curl -f http://localhost:6970/health || exit 1
+          docker stop test-stdio
+      
+      - name: Test Docker image - HTTP mode
+        run: |
+          # Test HTTP transport mode with explicit command to ensure proper startup
+          docker run --rm -e STORAGE_TYPE=sqlite -e TRANSPORT_TYPE=http -e HTTP_PORT=3000 -p 3000:3000 -d --name test-http mcp-memory-enhanced:test node dist/index.js
+          sleep 10
+          # Try health check on HTTP port
+          curl -f http://localhost:3000/health || {
+            echo "Health check failed, checking container logs..."
+            docker logs test-http
+            docker stop test-http || true
+            exit 1
+          }
+          docker stop test-http
 
   security-scan:
     name: Security Scan
