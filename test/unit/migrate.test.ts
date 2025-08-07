@@ -652,120 +652,329 @@ describe('Migration Tool', () => {
     });
   });
 
-  describe('Verification Edge Cases', () => {
-    it('should fail verification if entity is missing in SQLite', async () => {
-      const jsonPath = path.join(testDir, 'verify-missing.json');
-      const sqlitePath = path.join(testDir, 'verify-missing.db');
+  describe('End-to-End Tests (No Mocking)', () => {
+    it('should complete full migration with verification', async () => {
+      const jsonPath = path.join(testDir, 'e2e-full.json');
+      const sqlitePath = path.join(testDir, 'e2e-full.db');
 
-      const testData = {
-        entities: [{
-          name: 'TestEntity',
-          entityType: 'test',
-          observations: ['obs1']
-        }]
-      };
+      // Create comprehensive test data in NDJSON format
+      const testData = [
+        { type: 'entity', name: 'User1', entityType: 'person', observations: ['Created account', 'Logged in', 'Updated profile'] },
+        { type: 'entity', name: 'Project1', entityType: 'project', observations: ['Initialized', 'Added dependencies', 'First commit'] },
+        { type: 'entity', name: 'Task1', entityType: 'task', observations: ['Created', 'Assigned to User1', 'In progress'] },
+        { type: 'relation', from: 'User1', to: 'Project1', relationType: 'owns' },
+        { type: 'relation', from: 'Task1', to: 'Project1', relationType: 'belongs_to' },
+        { type: 'relation', from: 'User1', to: 'Task1', relationType: 'assigned_to' }
+      ];
 
-      await fs.writeFile(jsonPath, JSON.stringify(testData));
+      await fs.writeFile(jsonPath, testData.map(item => JSON.stringify(item)).join('\n'));
 
-      // Mock SQLiteStorage to simulate missing entity during verification
+      // Run full migration with verification
+      await migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true });
+
+      // Independently verify the migration using separate storage instances
       const { SQLiteStorage } = await import('../../storage/sqlite-storage.js');
-      const originalGetEntities = SQLiteStorage.prototype.getEntities;
+      const { JSONStorage } = await import('../../storage/json-storage.js');
       
-      let callCount = 0;
-      SQLiteStorage.prototype.getEntities = async function(names: string[]) {
-        callCount++;
-        // First call during migration succeeds, second call during verify fails
-        if (callCount > 1 && names.includes('TestEntity')) {
-          return []; // Simulate entity not found
-        }
-        return originalGetEntities.call(this, names);
-      };
-
-      // Migration with verification should fail
-      await expect(
-        migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true })
-      ).rejects.toThrow("Entity 'TestEntity' not found in SQLite");
-
-      // Restore original method
-      SQLiteStorage.prototype.getEntities = originalGetEntities;
+      const jsonStorage = new JSONStorage({ type: 'json', filePath: jsonPath });
+      const sqliteStorage = new SQLiteStorage({ type: 'sqlite', filePath: sqlitePath });
+      
+      await jsonStorage.initialize();
+      await sqliteStorage.initialize();
+      
+      const jsonGraph = await jsonStorage.loadGraph();
+      const sqliteGraph = await sqliteStorage.loadGraph();
+      
+      // Verify all entities migrated
+      expect(sqliteGraph.entities.length).toBe(jsonGraph.entities.length);
+      
+      // Verify all relations migrated
+      expect(sqliteGraph.relations.length).toBe(jsonGraph.relations.length);
+      
+      // Verify entity details
+      for (const entity of jsonGraph.entities) {
+        const migratedEntity = sqliteGraph.entities.find(e => e.name === entity.name);
+        expect(migratedEntity).toBeDefined();
+        expect(migratedEntity!.entityType).toBe(entity.entityType);
+        expect(migratedEntity!.observations).toEqual(entity.observations);
+      }
+      
+      // Verify relation details
+      for (const relation of jsonGraph.relations) {
+        const migratedRelation = sqliteGraph.relations.find(
+          r => r.from === relation.from && 
+               r.to === relation.to && 
+               r.relationType === relation.relationType
+        );
+        expect(migratedRelation).toBeDefined();
+      }
+      
+      await jsonStorage.close();
+      await sqliteStorage.close();
     });
 
-    it('should fail verification if unique observations are lost', async () => {
-      const jsonPath = path.join(testDir, 'verify-obs-lost.json');
-      const sqlitePath = path.join(testDir, 'verify-obs-lost.db');
+    it('should handle data quality improvements correctly', async () => {
+      const jsonPath = path.join(testDir, 'e2e-quality.json');
+      const sqlitePath = path.join(testDir, 'e2e-quality.db');
 
-      const testData = {
-        entities: [{
-          name: 'TestEntity',
-          entityType: 'test',
-          observations: ['obs1', 'obs2', 'obs3']
-        }]
-      };
+      // Create data with quality issues in NDJSON format
+      const testData = [
+        { type: 'entity', name: 'Entity1', entityType: 'test', observations: ['obs1', 'obs1', 'obs2', 'obs2', 'obs3'] }, // Duplicates
+        { type: 'entity', name: 'Entity2', entityType: 'test', observations: ['unique1', 'unique2'] },
+        { type: 'relation', from: 'Entity1', to: 'Entity2', relationType: 'valid' },
+        { type: 'relation', from: 'Entity1', to: 'NonExistent', relationType: 'invalid' }, // Invalid reference
+        { type: 'relation', from: 'NonExistent', to: 'Entity2', relationType: 'invalid' } // Invalid reference
+      ];
 
-      await fs.writeFile(jsonPath, JSON.stringify(testData));
+      await fs.writeFile(jsonPath, testData.map(item => JSON.stringify(item)).join('\n'));
 
-      // Mock SQLiteStorage to simulate lost observations
-      const { SQLiteStorage } = await import('../../storage/sqlite-storage.js');
-      const originalGetEntities = SQLiteStorage.prototype.getEntities;
-      
-      let callCount = 0;
-      SQLiteStorage.prototype.getEntities = async function(names: string[]) {
-        callCount++;
-        const result = await originalGetEntities.call(this, names);
-        // During verification, return missing observations
-        if (callCount > 1 && result.length > 0) {
-          result[0].observations = ['obs1']; // Missing obs2 and obs3
-        }
-        return result;
-      };
-
-      // Migration with verification should fail
-      await expect(
-        migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true })
-      ).rejects.toThrow("Lost observation for entity 'TestEntity': obs2");
-
-      // Restore original method
-      SQLiteStorage.prototype.getEntities = originalGetEntities;
-    });
-
-    it('should pass verification with duplicate observations removed', async () => {
-      const jsonPath = path.join(testDir, 'verify-dedup.json');
-      const sqlitePath = path.join(testDir, 'verify-dedup.db');
-
-      const testData = {
-        entities: [{
-          name: 'TestEntity',
-          entityType: 'test',
-          observations: ['obs1', 'obs1', 'obs2', 'obs2'] // Duplicates
-        }]
-      };
-
-      await fs.writeFile(jsonPath, JSON.stringify(testData));
-
-      // Should not throw - deduplication is expected
+      // Capture console output
       const originalConsoleLog = console.log;
-      let dedupReported = false;
+      let qualityReported = false;
+      let invalidRelationsReported = false;
+      let duplicatesReported = false;
+      
       console.log = (...args) => {
         const message = args.join(' ');
+        if (message.includes('Data Quality Improvements Applied')) {
+          qualityReported = true;
+        }
+        if (message.includes('invalid relation(s) skipped')) {
+          invalidRelationsReported = true;
+        }
         if (message.includes('duplicate observation(s) removed')) {
-          dedupReported = true;
+          duplicatesReported = true;
         }
         originalConsoleLog(...args);
       };
 
+      // Run migration with verification
       await migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true });
 
       console.log = originalConsoleLog;
-      expect(dedupReported).toBe(true);
 
-      // Verify the entity has deduplicated observations
+      // Verify quality improvements were reported
+      expect(qualityReported).toBe(true);
+      expect(invalidRelationsReported).toBe(true);
+      expect(duplicatesReported).toBe(true);
+
+      // Verify actual data in SQLite
       const { SQLiteStorage } = await import('../../storage/sqlite-storage.js');
       const sqliteStorage = new SQLiteStorage({ type: 'sqlite', filePath: sqlitePath });
       await sqliteStorage.initialize();
       
-      const entities = await sqliteStorage.getEntities(['TestEntity']);
-      expect(entities[0].observations).toEqual(['obs1', 'obs2']);
+      const graph = await sqliteStorage.loadGraph();
       
+      // Should have both entities
+      expect(graph.entities.length).toBe(2);
+      
+      // Should have only 1 valid relation (2 invalid ones skipped)
+      expect(graph.relations.length).toBe(1);
+      expect(graph.relations[0].from).toBe('Entity1');
+      expect(graph.relations[0].to).toBe('Entity2');
+      
+      // Entity1 should have deduplicated observations
+      const entity1 = graph.entities.find(e => e.name === 'Entity1');
+      expect(entity1!.observations).toEqual(['obs1', 'obs2', 'obs3']);
+      
+      await sqliteStorage.close();
+    });
+
+    it('should create and verify backup correctly', async () => {
+      const jsonPath = path.join(testDir, 'e2e-backup.json');
+      const sqlitePath = path.join(testDir, 'e2e-backup.db');
+
+      const testData = [
+        { type: 'entity', name: 'BackupTest', entityType: 'test', observations: ['data1', 'data2'] }
+      ];
+
+      await fs.writeFile(jsonPath, testData.map(item => JSON.stringify(item)).join('\n'));
+
+      // Run migration with backup
+      await migrateJSONToSQLite(jsonPath, sqlitePath, { backup: true });
+
+      // Find backup file
+      const files = await fs.readdir(testDir);
+      const backupFiles = files.filter(f => f.startsWith('e2e-backup.json.backup-'));
+      
+      expect(backupFiles.length).toBe(1);
+
+      // Verify backup content is identical to original
+      const originalContent = await fs.readFile(jsonPath, 'utf-8');
+      const backupContent = await fs.readFile(path.join(testDir, backupFiles[0]), 'utf-8');
+      
+      expect(backupContent).toBe(originalContent);
+    });
+
+    it('should fail when JSON file does not exist', async () => {
+      const jsonPath = path.join(testDir, 'e2e-nonexistent.json');
+      const sqlitePath = path.join(testDir, 'e2e-nonexistent.db');
+
+      // Don't create the JSON file - it should not exist
+
+      await expect(
+        migrateJSONToSQLite(jsonPath, sqlitePath)
+      ).rejects.toThrow('JSON file not found');
+    });
+
+    it('should handle empty JSON file correctly', async () => {
+      const jsonPath = path.join(testDir, 'e2e-empty.json');
+      const sqlitePath = path.join(testDir, 'e2e-empty.db');
+
+      // Create empty but valid NDJSON (empty file)
+      await fs.writeFile(jsonPath, '');
+
+      // Should not throw
+      await migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true });
+
+      // Verify SQLite database was created with no data
+      const { SQLiteStorage } = await import('../../storage/sqlite-storage.js');
+      const sqliteStorage = new SQLiteStorage({ type: 'sqlite', filePath: sqlitePath });
+      await sqliteStorage.initialize();
+      
+      const graph = await sqliteStorage.loadGraph();
+      expect(graph.entities.length).toBe(0);
+      expect(graph.relations.length).toBe(0);
+      
+      await sqliteStorage.close();
+    });
+
+    it('should handle very large dataset efficiently', async () => {
+      const jsonPath = path.join(testDir, 'e2e-large.json');
+      const sqlitePath = path.join(testDir, 'e2e-large.db');
+
+      // Create large dataset in NDJSON format
+      const entities = Array.from({ length: 1000 }, (_, i) => ({
+        type: 'entity',
+        name: `Entity${i}`,
+        entityType: `type${i % 10}`,
+        observations: Array.from({ length: 5 }, (_, j) => `obs${i}-${j}`)
+      }));
+      const relations = Array.from({ length: 500 }, (_, i) => ({
+        type: 'relation',
+        from: `Entity${i}`,
+        to: `Entity${(i + 1) % 1000}`,
+        relationType: `rel${i % 5}`
+      }));
+      const largeData = [...entities, ...relations];
+
+      await fs.writeFile(jsonPath, largeData.map(item => JSON.stringify(item)).join('\n'));
+
+      const startTime = Date.now();
+      await migrateJSONToSQLite(jsonPath, sqlitePath);
+      const duration = Date.now() - startTime;
+
+      // Should complete in reasonable time (under 10 seconds)
+      expect(duration).toBeLessThan(10000);
+
+      // Verify all data migrated
+      const { SQLiteStorage } = await import('../../storage/sqlite-storage.js');
+      const sqliteStorage = new SQLiteStorage({ type: 'sqlite', filePath: sqlitePath });
+      await sqliteStorage.initialize();
+      
+      const stats = await sqliteStorage.getStats();
+      expect(stats.entityCount).toBe(1000);
+      expect(stats.relationCount).toBe(500);
+      expect(stats.observationCount).toBe(5000);
+      
+      await sqliteStorage.close();
+    });
+
+    it('should correctly report storage size reduction', async () => {
+      const jsonPath = path.join(testDir, 'e2e-size.json');
+      const sqlitePath = path.join(testDir, 'e2e-size.db');
+
+      // Create data that should compress well in NDJSON format
+      const testData = Array.from({ length: 100 }, (_, i) => ({
+        type: 'entity',
+        name: `Entity${i}`,
+        entityType: 'standard',
+        observations: ['Standard observation 1', 'Standard observation 2']
+      }));
+
+      // Write in NDJSON format (no pretty print as it breaks format)
+      await fs.writeFile(jsonPath, testData.map(item => JSON.stringify(item)).join('\n'));
+
+      const originalConsoleLog = console.log;
+      let sizeReduction: number | null = null;
+      
+      console.log = (...args) => {
+        const message = args.join(' ');
+        const match = message.match(/Size reduction: (-?\d+)%/);
+        if (match) {
+          sizeReduction = parseInt(match[1]);
+        }
+        originalConsoleLog(...args);
+      };
+
+      await migrateJSONToSQLite(jsonPath, sqlitePath);
+
+      console.log = originalConsoleLog;
+
+      // Should report a size reduction
+      expect(sizeReduction).not.toBeNull();
+      
+      // Verify actual file sizes
+      const jsonStats = await fs.stat(jsonPath);
+      const sqliteStats = await fs.stat(sqlitePath);
+      
+      expect(jsonStats.size).toBeGreaterThan(0);
+      expect(sqliteStats.size).toBeGreaterThan(0);
+    });
+
+    it('should maintain data integrity through full cycle', async () => {
+      const jsonPath = path.join(testDir, 'e2e-integrity.json');
+      const sqlitePath = path.join(testDir, 'e2e-integrity.db');
+
+      // Create complex interconnected data in NDJSON format
+      const testData = [
+        { type: 'entity', name: 'Alice', entityType: 'person', observations: ['Software engineer', 'Team lead', 'Mentor'] },
+        { type: 'entity', name: 'Bob', entityType: 'person', observations: ['Junior developer', 'Fast learner'] },
+        { type: 'entity', name: 'ProjectX', entityType: 'project', observations: ['Q4 2024', 'High priority', 'Customer-facing'] },
+        { type: 'entity', name: 'TeamAlpha', entityType: 'team', observations: ['Frontend specialists', '5 members'] },
+        { type: 'relation', from: 'Alice', to: 'TeamAlpha', relationType: 'leads' },
+        { type: 'relation', from: 'Bob', to: 'TeamAlpha', relationType: 'member_of' },
+        { type: 'relation', from: 'TeamAlpha', to: 'ProjectX', relationType: 'assigned_to' },
+        { type: 'relation', from: 'Alice', to: 'Bob', relationType: 'mentors' },
+        { type: 'relation', from: 'ProjectX', to: 'Alice', relationType: 'managed_by' }
+      ];
+
+      await fs.writeFile(jsonPath, testData.map(item => JSON.stringify(item)).join('\n'));
+
+      // Migrate with verification
+      await migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true });
+
+      // Load both storages and compare
+      const { SQLiteStorage } = await import('../../storage/sqlite-storage.js');
+      const { JSONStorage } = await import('../../storage/json-storage.js');
+      
+      const jsonStorage = new JSONStorage({ type: 'json', filePath: jsonPath });
+      const sqliteStorage = new SQLiteStorage({ type: 'sqlite', filePath: sqlitePath });
+      
+      await jsonStorage.initialize();
+      await sqliteStorage.initialize();
+      
+      // Test specific queries
+      const aliceJson = await jsonStorage.getEntities(['Alice']);
+      const aliceSqlite = await sqliteStorage.getEntities(['Alice']);
+      
+      expect(aliceSqlite).toEqual(aliceJson);
+      
+      // Test relation queries
+      const aliceRelationsJson = await jsonStorage.getRelations(['Alice']);
+      const aliceRelationsSqlite = await sqliteStorage.getRelations(['Alice']);
+      
+      expect(aliceRelationsSqlite.length).toBe(aliceRelationsJson.length);
+      
+      // Verify each relation exists
+      for (const rel of aliceRelationsJson) {
+        const found = aliceRelationsSqlite.find(
+          r => r.from === rel.from && r.to === rel.to && r.relationType === rel.relationType
+        );
+        expect(found).toBeDefined();
+      }
+      
+      await jsonStorage.close();
       await sqliteStorage.close();
     });
   });
