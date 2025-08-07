@@ -3,8 +3,6 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { migrateJSONToSQLite } from '../../migrate.js';
-import { JSONStorage } from '../../storage/json-storage.js';
-import { SQLiteStorage } from '../../storage/sqlite-storage.js';
 import Database from 'better-sqlite3';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,7 +22,7 @@ describe('Migration Tool', () => {
         await fs.unlink(path.join(testDir, file));
       }
       await fs.rmdir(testDir);
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
   });
@@ -535,7 +533,7 @@ describe('Migration Tool', () => {
       try {
         // Force a verification failure
         await migrateJSONToSQLite(jsonPath, sqlitePath, { verify: true });
-      } catch (error) {
+      } catch {
         // Expected to fail
       }
 

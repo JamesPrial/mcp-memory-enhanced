@@ -42,7 +42,7 @@ async function migrateJSONToSQLite(
     if (jsonConfig.filePath) {
       try {
         await fs.access(jsonConfig.filePath);
-      } catch (error) {
+      } catch {
         throw new Error(`JSON file not found: ${jsonConfig.filePath}`);
       }
     }
