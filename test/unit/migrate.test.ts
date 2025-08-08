@@ -976,4 +976,13 @@ describe('Migration Tool', () => {
       await sqliteStorage.close();
     });
   });
+
+  describe('CLI Interface', () => {
+    it.skip('CLI tests need to be implemented separately', () => {
+      // CLI tests would spawn child processes to test the CLI functionality
+      // This would test the if (import.meta.url === `file://${process.argv[1]}`) block
+      // Which handles --help, -h, and actual migration from command line
+      expect(true).toBe(true);
+    });
+  });
 });
