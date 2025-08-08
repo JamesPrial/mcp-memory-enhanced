@@ -1,4 +1,4 @@
-import { describe, beforeAll, afterAll } from 'vitest';
+import { describe, beforeAll, afterAll, test } from 'vitest';
 import { BenchmarkRunner } from '../infrastructure/benchmark-runner.js';
 import { DatasetGenerator } from '../infrastructure/dataset-generator.js';
 import { ReportGenerator } from '../infrastructure/report-generator.js';
@@ -141,12 +141,12 @@ describe('Core Operations Benchmarks', () => {
             {
               'JSON': async () => {
                 for (const query of searchQueries) {
-                  await jsonStorage.searchNodes(query);
+                  await jsonStorage.searchEntities(query);
                 }
               },
               'SQLite': async () => {
                 for (const query of searchQueries) {
-                  await sqliteStorage.searchNodes(query);
+                  await sqliteStorage.searchEntities(query);
                 }
               },
             },
@@ -165,10 +165,10 @@ describe('Core Operations Benchmarks', () => {
             `Full Graph Read (${size} entities)`,
             {
               'JSON': async () => {
-                await jsonStorage.readGraph();
+                await jsonStorage.loadGraph();
               },
               'SQLite': async () => {
-                await sqliteStorage.readGraph();
+                await sqliteStorage.loadGraph();
               },
             },
             { iterations: 20 }

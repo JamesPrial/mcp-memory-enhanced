@@ -54,7 +54,7 @@ describe('Memory Usage Benchmarks', () => {
             await storage.createRelations(relations);
             
             // Keep storage in memory to measure usage
-            const graph = await storage.readGraph();
+            const graph = await storage.loadGraph();
             
             // Force GC before measurement
             if (global.gc) global.gc();
@@ -75,7 +75,7 @@ describe('Memory Usage Benchmarks', () => {
             await storage.createRelations(relations);
             
             // Keep storage in memory to measure usage
-            const graph = await storage.readGraph();
+            const graph = await storage.loadGraph();
             
             // Force GC before measurement
             if (global.gc) global.gc();
@@ -248,7 +248,7 @@ describe('Memory Usage Benchmarks', () => {
           
           // Perform operations that might trigger GC
           for (let i = 0; i < 100; i++) {
-            await storage.readGraph();
+            await storage.loadGraph();
           }
 
           await storage.close();

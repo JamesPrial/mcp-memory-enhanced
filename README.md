@@ -11,21 +11,24 @@ An enhanced fork of the official [MCP Memory Server](https://github.com/modelcon
 ## 🚀 Features
 
 - **Dual Storage Backend**: Choose between JSON (original) and SQLite storage
-- **3-10x Performance Improvement**: SQLite backend offers significant speed gains
+- **Performance Optimized**: SQLite backend for faster entity creation and searches
 - **Production-Ready Docker Support**: Multi-stage builds, health checks, and UnRAID compatibility
 - **Backward Compatible**: 100% compatible with the original MCP protocol
 - **Migration Tools**: Seamlessly migrate from JSON to SQLite storage
+- **Comprehensive Benchmarking**: Built-in performance validation and monitoring
 
 ## 📊 Performance Comparison
 
-Based on benchmarks with 10,000+ entities:
+Based on benchmarks with 10,000 entities:
 
 | Operation | JSON Backend | SQLite Backend | Improvement |
 |-----------|--------------|----------------|-------------|
-| Entity Creation | 3.5s | 0.014s | **250x faster** |
-| Search (1000 results) | 450ms | 30ms | **15x faster** |
-| Memory Usage | 850MB | 180MB | **79% less** |
-| Storage Size | 125MB | 87MB | **30% smaller** |
+| Entity Creation | 678ms | 145ms | **4.7x faster** |
+| Search (5 queries) | 90ms | 67ms | **1.3x faster** |
+| Memory Usage | 11.3MB | 11.3MB | **Similar** |
+| Storage Size | 3.9MB | 9.6MB | **JSON more compact** |
+
+*Note: Performance varies based on hardware and dataset characteristics. SQLite excels at indexed searches and concurrent access, while JSON provides simpler deployment and smaller file sizes for this dataset size.*
 
 ## 🐳 Quick Start with Docker
 
