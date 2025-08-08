@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2024-08-08
+
+### 🐛 Migration Tool Improvements
+
+This patch release focuses on improving the migration tool's reliability and test coverage.
+
+### Added
+- **Comprehensive test coverage for migration tool** - Achieving near 100% coverage
+- **CLI interface tests** - Testing command-line argument parsing and help functionality
+- **Edge case handling tests** - Malformed JSON, special characters, large datasets
+- **Data quality improvement tests** - Deduplication and invalid relation handling
+- **Backup functionality tests** - Ensuring backup creation and restoration works correctly
+
+### Changed
+- Migration tool now properly included in TypeScript build output
+- Improved error messages during migration failures
+- Enhanced data validation during migration process
+- Better handling of duplicate observations and invalid relations
+
+### Fixed
+- Migration tool not being compiled to dist directory
+- CLI interface not properly handling all argument combinations
+- Error cleanup not properly closing database connections
+- Data quality improvements not being properly reported
+
+### Testing
+- Added 26 new test cases for migration tool
+- Improved overall test coverage
+- Validated migration with datasets of 1000+ entities
+- Tested all error scenarios and edge cases
+
 ## [1.0.0] - 2024-08-07
 
 ### 🎉 First Production Release
