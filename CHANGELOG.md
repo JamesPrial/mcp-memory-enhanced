@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-08-08
+
+### 🔒 Security Update
+
+This patch release addresses security vulnerabilities detected in the Docker image dependencies.
+
+### Security
+- **Fixed CVE-2024-21538 (HIGH)** - cross-spawn ReDoS vulnerability
+- **Fixed CVE-2025-5889 (LOW)** - brace-expansion ReDoS vulnerability  
+- **Documented CVE-2025-47907** - Go stdlib issue in esbuild (not affecting runtime)
+
+### Changed
+- Updated Docker base image from Node 22.12/22-alpine to 22.13-alpine
+- Added npm update to latest version in both Docker build stages
+- Improved Docker image security posture
+
+### Technical Details
+- Vulnerabilities were in the Docker base image's global npm installation
+- Application dependencies remain secure (0 vulnerabilities via npm audit)
+- No breaking changes to application functionality
+
 ## [1.0.1] - 2024-08-08
 
 ### 🐛 Migration Tool Improvements
