@@ -107,9 +107,17 @@ jobs:
           name: unraid-template-${{ github.ref_name }}
           path: unraid-template.xml
       
-      - name: Create release asset
+      - name: Create or update release with UnRAID template
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Check if release exists, create if it doesn't
+          if ! gh release view ${{ github.ref_name }} > /dev/null 2>&1; then
+            echo "Creating release ${{ github.ref_name }}"
+            gh release create ${{ github.ref_name }} \
+              --title "Release ${{ github.ref_name }}" \
+              --notes "Docker image available at: ghcr.io/${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
+          fi
+          # Upload the UnRAID template
           gh release upload ${{ github.ref_name }} unraid-template.xml --clobber
