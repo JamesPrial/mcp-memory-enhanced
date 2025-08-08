@@ -1,15 +1,18 @@
-FROM node:22.12-alpine AS builder
+FROM node:22.13-alpine AS builder
 
 COPY src/memory /app
 COPY tsconfig.json /tsconfig.json
 
 WORKDIR /app
 
+# Update npm to latest version to fix vulnerabilities
+RUN npm install -g npm@latest
+
 RUN --mount=type=cache,target=/root/.npm npm install
 
 RUN --mount=type=cache,target=/root/.npm-production npm ci --ignore-scripts --omit-dev
 
-FROM node:22-alpine AS release
+FROM node:22.13-alpine AS release
 
 COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/package.json /app/package.json
@@ -18,6 +21,9 @@ COPY --from=builder /app/package-lock.json /app/package-lock.json
 ENV NODE_ENV=production
 
 WORKDIR /app
+
+# Update npm to latest version to fix vulnerabilities
+RUN npm install -g npm@latest
 
 RUN npm ci --ignore-scripts --omit-dev
 
