@@ -70,7 +70,9 @@ async function benchmark(size: number) {
   try {
     const stats = await fs.stat(jsonPath);
     jsonFileSize = stats.size / (1024 * 1024);
-  } catch (e) {}
+  } catch {
+    // Ignore error
+  }
   
   console.log(`  Time: ${jsonTime.toFixed(2)}s`);
   console.log(`  Memory: ${jsonMem.toFixed(2)}MB`);
@@ -109,7 +111,9 @@ async function benchmark(size: number) {
   try {
     const stats = await fs.stat(sqlitePath);
     sqliteFileSize = stats.size / (1024 * 1024);
-  } catch (e) {}
+  } catch {
+    // Ignore error
+  }
   
   console.log(`  Time: ${sqliteTime.toFixed(2)}s`);
   console.log(`  Memory: ${sqliteMem.toFixed(2)}MB`);

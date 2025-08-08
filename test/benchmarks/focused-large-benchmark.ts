@@ -6,7 +6,7 @@
 
 import { JSONStorage } from '../../storage/json-storage.js';
 import { SQLiteStorage } from '../../storage/sqlite-storage.js';
-import { Entity, Relation } from '../../types.js';
+import { Entity } from '../../types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -98,7 +98,7 @@ class FocusedBenchmark {
       const jsonStats = await fs.stat(jsonPath);
       const jsonFileSize = jsonStats.size / (1024 * 1024);
       console.log(`  File size: ${jsonFileSize.toFixed(2)}MB`);
-    } catch (e) {
+    } catch {
       console.log(`  File size: Could not determine`);
     }
     
@@ -147,14 +147,14 @@ class FocusedBenchmark {
       const sqliteStats = await fs.stat(sqlitePath);
       const sqliteFileSize = sqliteStats.size / (1024 * 1024);
       console.log(`  File size: ${sqliteFileSize.toFixed(2)}MB`);
-    } catch (e) {
+    } catch {
       console.log(`  File size: Could not determine`);
     }
     
     // Calculate improvements
     const timeImprovement = jsonTime / sqliteTime;
     const memImprovement = jsonMemUsed / sqliteMemUsed;
-    const rssImprovement = jsonRSS / sqliteRSS;
+    const _rssImprovement = jsonRSS / sqliteRSS;
     
     // Search benchmark with smaller sample
     console.log('\n🔍 Testing Search Performance (1000 random searches)...');
