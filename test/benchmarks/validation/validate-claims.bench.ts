@@ -1,4 +1,4 @@
-import { describe, test } from 'vitest';
+import { describe, test, beforeAll, afterAll, expect } from 'vitest';
 import { BenchmarkRunner } from '../infrastructure/benchmark-runner.js';
 import { DatasetGenerator } from '../infrastructure/dataset-generator.js';
 import { ReportGenerator } from '../infrastructure/report-generator.js';
@@ -123,15 +123,15 @@ describe('README Claims Validation', () => {
       {
         'JSON': async () => {
           for (const query of searchQueries) {
-            const results = await jsonStorage.searchNodes(query);
+            const results = await jsonStorage.searchEntities(query);
             // Ensure we're getting substantial results
-            if (results.entities.length > 100) break;
+            if (results.length > 100) break;
           }
         },
         'SQLite': async () => {
           for (const query of searchQueries) {
-            const results = await sqliteStorage.searchNodes(query);
-            if (results.entities.length > 100) break;
+            const results = await sqliteStorage.searchEntities(query);
+            if (results.length > 100) break;
           }
         },
       },
