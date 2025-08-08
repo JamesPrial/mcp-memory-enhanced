@@ -1,0 +1,208 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      full_suite:
+        description: 'Run full benchmark suite'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Run validation benchmarks
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        run: |
+          npm run benchmark:validate -- --output ./benchmark-results.json --format json
+        env:
+          NODE_OPTIONS: --expose-gc
+      
+      - name: Run full benchmark suite
+        if: github.event.inputs.full_suite == 'true' || github.ref == 'refs/heads/main'
+        run: |
+          npm run benchmark:full -- --output ./benchmark-results
+        env:
+          NODE_OPTIONS: --expose-gc
+      
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: |
+            benchmark-results.json
+            benchmark-results/
+          retention-days: 30
+      
+      - name: Download baseline results
+        if: github.event_name == 'pull_request'
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: benchmark-baseline
+          path: baseline/
+      
+      - name: Compare with baseline
+        if: github.event_name == 'pull_request' && success()
+        id: compare
+        run: |
+          if [ -f baseline/benchmark-results.json ]; then
+            npm run benchmark:compare baseline/benchmark-results.json benchmark-results.json -- --format markdown > comparison.md
+            echo "has_baseline=true" >> $GITHUB_OUTPUT
+          else
+            echo "No baseline found for comparison" > comparison.md
+            echo "has_baseline=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const comparison = fs.readFileSync('comparison.md', 'utf8');
+            const results = JSON.parse(fs.readFileSync('benchmark-results.json', 'utf8'));
+            
+            let comment = '## 📊 Benchmark Results\n\n';
+            
+            // Add validation summary
+            if (results.claims) {
+              comment += '### Performance Claims Validation\n\n';
+              comment += '| Metric | Claimed | Actual | Status |\n';
+              comment += '|--------|---------|--------|--------|\n';
+              
+              for (const [key, value] of Object.entries(results.claims)) {
+                const status = value.actual ? '✅' : '❌';
+                comment += `| ${key} | ${value.claimed} | ${value.actual || 'N/A'} | ${status} |\n`;
+              }
+              comment += '\n';
+            }
+            
+            // Add comparison if available
+            if ('${{ steps.compare.outputs.has_baseline }}' === 'true') {
+              comment += '### Comparison with Baseline\n\n';
+              comment += comparison;
+            } else {
+              comment += '### Initial Benchmark\n\n';
+              comment += 'This is the first benchmark run for this PR. Future runs will be compared against these results.\n';
+            }
+            
+            // Add details
+            comment += '\n<details>\n<summary>Full Results</summary>\n\n';
+            comment += '```json\n';
+            comment += JSON.stringify(results, null, 2);
+            comment += '\n```\n</details>';
+            
+            // Find and update or create comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('📊 Benchmark Results')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+      
+      - name: Save baseline for main branch
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-baseline
+          path: benchmark-results.json
+          retention-days: 90
+      
+      - name: Check for regressions
+        if: github.event_name == 'pull_request'
+        run: |
+          node -e "
+            const results = require('./benchmark-results.json');
+            if (results.regression) {
+              console.error('Performance regression detected!');
+              process.exit(1);
+            }
+          "
+
+  benchmark-matrix:
+    if: github.event.inputs.full_suite == 'true'
+    strategy:
+      matrix:
+        dataset-size: [1000, 10000, 100000]
+        storage-backend: [json, sqlite]
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Run benchmark for ${{ matrix.storage-backend }} with ${{ matrix.dataset-size }} entities
+        run: |
+          npm run benchmark:specific -- \
+            --backend ${{ matrix.storage-backend }} \
+            --size ${{ matrix.dataset-size }} \
+            --output results-${{ matrix.storage-backend }}-${{ matrix.dataset-size }}.json
+        env:
+          NODE_OPTIONS: --expose-gc
+      
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-matrix-${{ matrix.storage-backend }}-${{ matrix.dataset-size }}
+          path: results-${{ matrix.storage-backend }}-${{ matrix.dataset-size }}.json
+          retention-days: 30
