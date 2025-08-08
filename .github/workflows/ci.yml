@@ -21,6 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Debug - List files
+        run: |
+          echo "Checking for package-lock.json..."
+          ls -la package*.json || echo "No package files found"
+          if [ ! -f package-lock.json ]; then
+            echo "ERROR: package-lock.json not found after checkout!"
+            echo "Generating package-lock.json from package.json..."
+            npm install
+          fi
+      
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -46,6 +56,16 @@ jobs:
         storage-type: [json, sqlite]
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Debug - List files
+        run: |
+          echo "Checking for package-lock.json..."
+          ls -la package*.json || echo "No package files found"
+          if [ ! -f package-lock.json ]; then
+            echo "ERROR: package-lock.json not found after checkout!"
+            echo "Generating package-lock.json from package.json..."
+            npm install
+          fi
       
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
