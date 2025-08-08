@@ -1,6 +1,6 @@
 {
   "name": "mcp-memory-enhanced",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Enhanced MCP memory server with SQLite backend for improved performance and scalability",
   "license": "MIT",
   "author": "Anthropic, PBC (https://anthropic.com)",
