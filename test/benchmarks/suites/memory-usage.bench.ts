@@ -17,7 +17,7 @@ describe('Memory Usage Benchmarks', () => {
     collectMemory: true,
   });
 
-  const reporter = new ReportGenerator();
+  const _reporter = new ReportGenerator();
   const generator = new DatasetGenerator(42);
 
   let testDir: string;
@@ -150,7 +150,7 @@ describe('Memory Usage Benchmarks', () => {
       console.log('\n📈 Analyzing memory growth patterns...\n');
 
       const measureMemoryGrowth = async (storageFactory: () => IStorageBackend, name: string) => {
-        const memorySnapshots: NodeJS.MemoryUsage[] = [];
+        const memorySnapshots: ReturnType<typeof process.memoryUsage>[] = [];
         
         const storage = storageFactory();
         await storage.initialize();
@@ -230,8 +230,8 @@ describe('Memory Usage Benchmarks', () => {
         let gcDuration = 0;
 
         // Monitor GC if available
-        if (global.gc && performance) {
-          const observer = new PerformanceObserver((list) => {
+        if (global.gc && typeof performance !== 'undefined') {
+          const observer = new (eval('PerformanceObserver'))((list: any) => {
             const entries = list.getEntries();
             for (const entry of entries) {
               if (entry.entryType === 'gc') {
@@ -257,7 +257,7 @@ describe('Memory Usage Benchmarks', () => {
           // Fallback: manual GC tracking
           await storage.initialize();
           
-          const startMem = process.memoryUsage().heapUsed;
+          const _startMem = process.memoryUsage().heapUsed;
           await storage.createEntities(entities);
           await storage.createRelations(relations);
           

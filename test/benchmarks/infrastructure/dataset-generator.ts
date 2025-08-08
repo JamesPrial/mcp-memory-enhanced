@@ -134,16 +134,18 @@ export class DatasetGenerator {
       const queryType = Math.floor(this.random() * 4);
       
       switch (queryType) {
-        case 0: // Exact entity name
+        case 0: { // Exact entity name
           const entity = entities[Math.floor(this.random() * entities.length)];
           queries.push(entity.name);
           break;
+        }
         
-        case 1: // Partial name
+        case 1: { // Partial name
           const entity2 = entities[Math.floor(this.random() * entities.length)];
           const parts = entity2.name.split('_');
           queries.push(parts[Math.floor(this.random() * parts.length)]);
           break;
+        }
         
         case 2: // Entity type
           queries.push(this.entityTypes[Math.floor(this.random() * this.entityTypes.length)]);

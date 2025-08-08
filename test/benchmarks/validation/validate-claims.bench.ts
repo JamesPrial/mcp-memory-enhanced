@@ -19,7 +19,7 @@ describe('README Claims Validation', () => {
     collectMemory: true,
   });
 
-  const reporter = new ReportGenerator();
+  const _reporter = new ReportGenerator();
   const generator = new DatasetGenerator(42);
 
   // Test with 10,000 entities as stated in README
@@ -154,8 +154,8 @@ describe('README Claims Validation', () => {
   test('Claim 3: Memory Usage - 79% less', async () => {
     console.log('\n📊 VALIDATING: Memory Usage (Claimed: 79% less)\n');
 
-    let jsonMemory: number = 0;
-    let sqliteMemory: number = 0;
+    let _jsonMemory: number = 0;
+    let _sqliteMemory: number = 0;
 
     // Measure JSON memory usage
     const jsonResult = await runner.run(
@@ -169,7 +169,7 @@ describe('README Claims Validation', () => {
         // Force GC and measure
         if (global.gc) global.gc();
         const mem = process.memoryUsage();
-        jsonMemory = mem.heapUsed;
+        _jsonMemory = mem.heapUsed;
         
         await storage.close();
       },
@@ -188,7 +188,7 @@ describe('README Claims Validation', () => {
         // Force GC and measure
         if (global.gc) global.gc();
         const mem = process.memoryUsage();
-        sqliteMemory = mem.heapUsed;
+        _sqliteMemory = mem.heapUsed;
         
         await storage.close();
       },

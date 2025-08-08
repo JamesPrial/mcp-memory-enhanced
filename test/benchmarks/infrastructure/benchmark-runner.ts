@@ -23,7 +23,7 @@ export class BenchmarkRunner {
   ): Promise<BenchmarkResult> {
     const opts = { ...this.options, ...options };
     const samples: number[] = [];
-    const memorySamples: NodeJS.MemoryUsage[] = [];
+    const memorySamples: ReturnType<typeof process.memoryUsage>[] = [];
     
     // Warmup phase
     for (let i = 0; i < opts.warmupIterations!; i++) {
@@ -118,7 +118,7 @@ export class BenchmarkRunner {
     };
   }
 
-  private calculateMemoryStats(samples: NodeJS.MemoryUsage[]): any {
+  private calculateMemoryStats(samples: ReturnType<typeof process.memoryUsage>[]): any {
     const heapUsed = samples.map(s => s.heapUsed);
     const rss = samples.map(s => s.rss);
     const external = samples.map(s => s.external);
