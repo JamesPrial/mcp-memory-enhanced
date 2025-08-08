@@ -13,9 +13,9 @@ jobs:
       - name: Check PR source branch
         run: |
           echo "PR is from branch: ${{ github.head_ref }}"
-          if [[ "${{ github.head_ref }}" != "release/v1.0.0" ]]; then
-            echo "❌ PRs to main must come from release/v1.0.0 branch only"
+          if [[ ! "${{ github.head_ref }}" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ PRs to main must come from release/vX.Y.Z branch pattern"
             echo "Current PR is from: ${{ github.head_ref }}"
             exit 1
           fi
-          echo "✅ PR is from the correct release branch (release/v1.0.0)"
+          echo "✅ PR is from a valid release branch: ${{ github.head_ref }}"
