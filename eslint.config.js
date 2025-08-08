@@ -39,6 +39,6 @@ export default [
     }
   },
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '*.js', '*.cjs', '*.mjs', 'src/**/dist/', 'src/**/dist/**/*']
+    ignores: ['dist/', 'node_modules/', 'coverage/', '*.js', '*.cjs', '*.mjs', 'src/**/dist/', 'src/**/dist/**/*', 'mcp-memory-enhanced-work/', 'mcp-memory-fix/']
   }
 ];
