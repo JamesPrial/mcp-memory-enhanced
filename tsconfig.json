@@ -33,6 +33,7 @@
     "src/memory/**/*",
     "test/**/*",
     "mcp-memory-fix/**/*",
-    "mcp-memory-enhanced-repo/**/*"
+    "mcp-memory-enhanced-repo/**/*",
+    "mcp-memory-enhanced-work/**/*"
   ]
 }
