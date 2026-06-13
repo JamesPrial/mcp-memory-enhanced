@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-06-13
+
+### 📊 Benchmarking & Tooling
+
+This patch release adds a comprehensive performance benchmarking system, refreshes
+documentation with validated metrics, and cleans up CI tooling.
+
+### Added
+- **Comprehensive benchmarking system** - Benchmark suites and infrastructure under
+  `test/benchmarks/`, a runner at `scripts/run-benchmarks.ts`, documentation in
+  `BENCHMARKS.md`, a `benchmark.yml` CI workflow, and `npm run benchmark*` scripts
+- **Claude Code project configuration** - `CLAUDE.md` guidance and `.claude/` config
+
+### Changed
+- Updated README with validated performance metrics
+
+### Fixed
+- Resolved ESLint/CI errors in the benchmark suite
+- Fixed `package-lock.json` generation and added a presence check in CI
+- PR source-branch check now accepts any `release/vX.Y.Z` branch
+
+### Removed
+- Accidentally committed runtime data artifacts (`memory.db`, `memory.json`); these
+  local storage-backend files are now gitignored
+
 ## [1.0.2] - 2025-08-08
 
 ### 🔒 Security Update
