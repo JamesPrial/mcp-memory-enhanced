@@ -29,6 +29,7 @@
     "benchmark:quick": "NODE_OPTIONS='--expose-gc' vitest bench test/benchmarks/quick-performance.bench.ts --run",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js",
     "start:http": "TRANSPORT_TYPE=http npm start",
     "start:sse": "TRANSPORT_TYPE=sse npm start"
   },
