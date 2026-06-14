@@ -19,18 +19,6 @@ An enhanced fork of the official [MCP Memory Server](https://github.com/modelcon
 
 ## 📊 Performance Comparison
 
-<<<<<<< HEAD
-Based on benchmarks with 10,000 entities:
-
-| Operation | JSON Backend | SQLite Backend | Improvement |
-|-----------|--------------|----------------|-------------|
-| Entity Creation | 678ms | 145ms | **4.7x faster** |
-| Search (5 queries) | 90ms | 67ms | **1.3x faster** |
-| Memory Usage | 11.3MB | 11.3MB | **Similar** |
-| Storage Size | 3.9MB | 9.6MB | **JSON more compact** |
-
-*Note: Performance varies based on hardware and dataset characteristics. SQLite excels at indexed searches and concurrent access, while JSON provides simpler deployment and smaller file sizes for this dataset size.*
-=======
 Based on comprehensive benchmarks with datasets from 10K to 500K entities (validated 2025-08-08):
 
 | Operation | JSON Backend | SQLite Backend | Improvement |
@@ -44,7 +32,6 @@ Based on comprehensive benchmarks with datasets from 10K to 500K entities (valid
 *Storage size validation pending; preliminary tests show 30-40% reduction
 
 > **Note**: Performance improvements scale with dataset size. Larger datasets show more dramatic improvements, with 500K entities showing 119x faster creation and consistent 90%+ memory reduction. Benchmarks run on standard hardware with Node.js v22.
->>>>>>> dev/v1.0.2
 
 ## 🐳 Quick Start with Docker
 

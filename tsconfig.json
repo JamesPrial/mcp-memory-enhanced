@@ -30,10 +30,8 @@
     "node_modules",
     "dist",
     "coverage",
-    "src/memory/**/*",
     "test/**/*",
-    "mcp-memory-fix/**/*",
-    "mcp-memory-enhanced-repo/**/*",
-    "mcp-memory-enhanced-work/**/*"
+    "vitest.config.ts",
+    "scripts/**/*"
   ]
 }
