@@ -14,9 +14,6 @@ coverage:
         base: auto
         flags:
           - unittests
-        paths:
-          - "src"
-          - "!src/memory"
         if_ci_failed: error
     patch:
       default:
@@ -45,13 +42,10 @@ ignore:
   - "**/*.test.ts"
   - "**/*.spec.ts"
   - "mcp-memory-fix/**/*"
-  - "src/memory/**/*"
   - "dist/**/*"
   - "coverage/**/*"
   - "docs/**/*"
 
 flags:
   unittests:
-    paths:
-      - src/
     carryforward: false

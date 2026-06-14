@@ -1,0 +1,14 @@
+# Keep the Docker build context small. The image rebuilds dist/ from source.
+node_modules
+dist
+coverage
+.git
+.github
+.vscode
+.claude
+test
+**/*.test.ts
+**/*.spec.ts
+**/*.bench.ts
+*.log
+npm-debug.log*

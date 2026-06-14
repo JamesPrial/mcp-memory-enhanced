@@ -13,14 +13,11 @@ export default defineConfig({
         'node_modules/**',
         'dist/**',
         'test/**',
-        'mcp-memory-fix/**',
         '**/*.test.ts',
         '**/*.spec.ts',
         '**/*.bench.ts',
         'vitest.config.ts',
         'migrate.ts',
-        'test-sqlite.ts',
-        'src/**',
         'coverage/**',
         'eslint.config.js'
       ],
@@ -33,10 +30,10 @@ export default defineConfig({
         'types.ts'
       ],
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 75,
-        statements: 80
+        lines: 85,
+        functions: 85,
+        branches: 80,
+        statements: 85
       }
     },
     pool: 'forks',
