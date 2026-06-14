@@ -183,3 +183,8 @@ export const OpenNodesSchema = {
   },
   required: ["names"]
 };
+
+export const GetStatsSchema = {
+  type: "object",
+  properties: {}
+};

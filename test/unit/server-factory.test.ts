@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { createServerFromFactory } from '../../server-factory.js';
 import * as storageFactory from '../../storage/factory.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { VERSION } from '../../version.js';
 
 // Mock the storage factory module
 vi.mock('../../storage/factory.js', () => ({
@@ -76,7 +77,7 @@ describe('server-factory', () => {
       expect(Server).toHaveBeenCalledWith(
         {
           name: 'memory',
-          version: '0.6.3'
+          version: VERSION
         },
         {
           capabilities: {
@@ -127,7 +128,7 @@ describe('server-factory', () => {
       
       const response = await listToolsHandler();
       
-      expect(response.tools).toHaveLength(9);
+      expect(response.tools).toHaveLength(10);
       expect(response.tools[0].name).toBe('memory__create_entities');
       expect(response.tools[1].name).toBe('memory__create_relations');
       expect(response.tools[2].name).toBe('memory__add_observations');
@@ -137,6 +138,7 @@ describe('server-factory', () => {
       expect(response.tools[6].name).toBe('memory__read_graph');
       expect(response.tools[7].name).toBe('memory__search_nodes');
       expect(response.tools[8].name).toBe('memory__open_nodes');
+      expect(response.tools[9].name).toBe('memory__get_stats');
     });
 
     it('should include correct descriptions for tools', async () => {
@@ -355,6 +357,29 @@ describe('server-factory', () => {
       const result = JSON.parse(response.content[0].text);
       expect(result).toHaveProperty('entities');
       expect(result).toHaveProperty('relations');
+    });
+
+    it('should handle memory__get_stats', async () => {
+      mockStorage.getStats.mockResolvedValue({
+        entityCount: 2,
+        relationCount: 1,
+        observationCount: 3
+      });
+
+      const request = {
+        params: {
+          name: 'memory__get_stats',
+          arguments: {}
+        }
+      };
+
+      const response = await callToolHandler(request);
+
+      expect(response.content).toHaveLength(1);
+      const result = JSON.parse(response.content[0].text);
+      expect(result.entityCount).toBe(2);
+      expect(result.relationCount).toBe(1);
+      expect(result.observationCount).toBe(3);
     });
 
     it('should throw error for unknown tool', async () => {

@@ -27,6 +27,7 @@ export default defineConfig({
         'server-factory.ts',
         'server-factory-schemas.ts',
         'health-server.ts',
+        'tools.ts',
         'types.ts'
       ],
       thresholds: {

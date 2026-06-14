@@ -97,22 +97,22 @@ describe('MCP Server Integration Tests', () => {
           expect(tools.tools).toHaveLength(10);
           
           const toolNames = tools.tools.map(t => t.name);
-          expect(toolNames).toContain('create_entities');
-          expect(toolNames).toContain('create_relations');
-          expect(toolNames).toContain('add_observations');
-          expect(toolNames).toContain('delete_entities');
-          expect(toolNames).toContain('delete_observations');
-          expect(toolNames).toContain('delete_relations');
-          expect(toolNames).toContain('read_graph');
-          expect(toolNames).toContain('search_nodes');
-          expect(toolNames).toContain('open_nodes');
-          expect(toolNames).toContain('get_stats');
+          expect(toolNames).toContain('memory__create_entities');
+          expect(toolNames).toContain('memory__create_relations');
+          expect(toolNames).toContain('memory__add_observations');
+          expect(toolNames).toContain('memory__delete_entities');
+          expect(toolNames).toContain('memory__delete_observations');
+          expect(toolNames).toContain('memory__delete_relations');
+          expect(toolNames).toContain('memory__read_graph');
+          expect(toolNames).toContain('memory__search_nodes');
+          expect(toolNames).toContain('memory__open_nodes');
+          expect(toolNames).toContain('memory__get_stats');
         });
 
         it('should provide correct input schemas for tools', async () => {
           const tools = await client.listTools();
           
-          const createEntities = tools.tools.find(t => t.name === 'create_entities');
+          const createEntities = tools.tools.find(t => t.name === 'memory__create_entities');
           expect(createEntities?.inputSchema).toBeDefined();
           expect(createEntities?.inputSchema.type).toBe('object');
           expect(createEntities?.inputSchema.properties).toHaveProperty('entities');
@@ -134,7 +134,7 @@ describe('MCP Server Integration Tests', () => {
             },
           ];
 
-          const result = await callTool('create_entities', { entities });
+          const result = await callTool('memory__create_entities', { entities });
           expect(result).toHaveLength(2);
           expect(result[0].name).toBe('Test User');
           expect(result[1].name).toBe('Test Project');
@@ -142,7 +142,7 @@ describe('MCP Server Integration Tests', () => {
 
         it('should delete entities', async () => {
           // Create entities first
-          await callTool('create_entities', {
+          await callTool('memory__create_entities', {
             entities: [{
               name: 'To Delete',
               entityType: 'Test',
@@ -151,7 +151,7 @@ describe('MCP Server Integration Tests', () => {
           });
 
           // Delete the entity
-          const deleteResult = await callTool('delete_entities', {
+          const deleteResult = await callTool('memory__delete_entities', {
             entityNames: ['To Delete'],
           });
 
@@ -159,7 +159,7 @@ describe('MCP Server Integration Tests', () => {
           expect(deleteResult).toBe('Entities deleted successfully');
 
           // Verify it's gone
-          const graph = await callTool('read_graph', {});
+          const graph = await callTool('memory__read_graph', {});
           expect(graph.entities).toHaveLength(0);
         });
       });
@@ -167,7 +167,7 @@ describe('MCP Server Integration Tests', () => {
       describe('Observation Operations', () => {
         beforeEach(async () => {
           // Create a test entity
-          await callTool('create_entities', {
+          await callTool('memory__create_entities', {
             entities: [{
               name: 'Observable Entity',
               entityType: 'Test',
@@ -177,7 +177,7 @@ describe('MCP Server Integration Tests', () => {
         });
 
         it('should add observations', async () => {
-          const result = await callTool('add_observations', {
+          const result = await callTool('memory__add_observations', {
             observations: [{
               entityName: 'Observable Entity',
               contents: ['New observation 1', 'New observation 2'],
@@ -190,7 +190,7 @@ describe('MCP Server Integration Tests', () => {
 
         it('should delete observations', async () => {
           // Add observations first
-          await callTool('add_observations', {
+          await callTool('memory__add_observations', {
             observations: [{
               entityName: 'Observable Entity',
               contents: ['To delete 1', 'To keep', 'To delete 2'],
@@ -198,7 +198,7 @@ describe('MCP Server Integration Tests', () => {
           });
 
           // Delete specific observations
-          const deleteResult = await callTool('delete_observations', {
+          const deleteResult = await callTool('memory__delete_observations', {
             deletions: [{
               entityName: 'Observable Entity',
               observations: ['To delete 1', 'To delete 2'],
@@ -209,7 +209,7 @@ describe('MCP Server Integration Tests', () => {
           expect(deleteResult).toBe('Observations deleted successfully');
 
           // Verify correct observations remain
-          const result = await callTool('open_nodes', {
+          const result = await callTool('memory__open_nodes', {
             names: ['Observable Entity'],
           });
           
@@ -224,7 +224,7 @@ describe('MCP Server Integration Tests', () => {
       describe('Relation Operations', () => {
         beforeEach(async () => {
           // Create entities for relations
-          await callTool('create_entities', {
+          await callTool('memory__create_entities', {
             entities: [
               {
                 name: 'Entity A',
@@ -241,7 +241,7 @@ describe('MCP Server Integration Tests', () => {
         });
 
         it('should create relations', async () => {
-          const result = await callTool('create_relations', {
+          const result = await callTool('memory__create_relations', {
             relations: [{
               from: 'Entity A',
               to: 'Entity B',
@@ -257,7 +257,7 @@ describe('MCP Server Integration Tests', () => {
 
         it('should delete relations', async () => {
           // Create relation first
-          await callTool('create_relations', {
+          await callTool('memory__create_relations', {
             relations: [{
               from: 'Entity A',
               to: 'Entity B',
@@ -266,7 +266,7 @@ describe('MCP Server Integration Tests', () => {
           });
 
           // Delete the relation
-          const deleteResult = await callTool('delete_relations', {
+          const deleteResult = await callTool('memory__delete_relations', {
             relations: [{
               from: 'Entity A',
               to: 'Entity B',
@@ -278,7 +278,7 @@ describe('MCP Server Integration Tests', () => {
           expect(deleteResult).toBe('Relations deleted successfully');
 
           // Verify it's gone
-          const graph = await callTool('read_graph', {});
+          const graph = await callTool('memory__read_graph', {});
           expect(graph.relations).toHaveLength(0);
         });
       });
@@ -286,7 +286,7 @@ describe('MCP Server Integration Tests', () => {
       describe('Query Operations', () => {
         beforeEach(async () => {
           // Create test data
-          await callTool('create_entities', {
+          await callTool('memory__create_entities', {
             entities: [
               {
                 name: 'Searchable Entity',
@@ -301,7 +301,7 @@ describe('MCP Server Integration Tests', () => {
             ],
           });
 
-          await callTool('create_relations', {
+          await callTool('memory__create_relations', {
             relations: [{
               from: 'Searchable Entity',
               to: 'Another Entity',
@@ -311,14 +311,14 @@ describe('MCP Server Integration Tests', () => {
         });
 
         it('should read entire graph', async () => {
-          const graph = await callTool('read_graph', {});
+          const graph = await callTool('memory__read_graph', {});
           
           expect(graph.entities).toHaveLength(2);
           expect(graph.relations).toHaveLength(1);
         });
 
         it('should search nodes by query', async () => {
-          const results = await callTool('search_nodes', {
+          const results = await callTool('memory__search_nodes', {
             query: 'KEYWORD',
           });
 
@@ -328,7 +328,7 @@ describe('MCP Server Integration Tests', () => {
         });
 
         it('should open specific nodes', async () => {
-          const result = await callTool('open_nodes', {
+          const result = await callTool('memory__open_nodes', {
             names: ['Searchable Entity', 'Another Entity'],
           });
 
@@ -342,7 +342,7 @@ describe('MCP Server Integration Tests', () => {
       describe('Statistics', () => {
         it('should return correct statistics', async () => {
           // Create test data
-          await callTool('create_entities', {
+          await callTool('memory__create_entities', {
             entities: [
               {
                 name: 'Stats Entity 1',
@@ -357,7 +357,7 @@ describe('MCP Server Integration Tests', () => {
             ],
           });
 
-          await callTool('create_relations', {
+          await callTool('memory__create_relations', {
             relations: [{
               from: 'Stats Entity 1',
               to: 'Stats Entity 2',
@@ -365,7 +365,7 @@ describe('MCP Server Integration Tests', () => {
             }],
           });
 
-          const stats = await callTool('get_stats', {});
+          const stats = await callTool('memory__get_stats', {});
           
           expect(stats.entityCount).toBe(2);
           expect(stats.relationCount).toBe(1);
@@ -387,7 +387,7 @@ describe('MCP Server Integration Tests', () => {
         it('should handle invalid arguments', async () => {
           // Try to create entities with invalid structure
           await expect(
-            callTool('create_entities', {
+            callTool('memory__create_entities', {
               // Missing required 'entities' field
               wrongField: [],
             })
@@ -398,7 +398,7 @@ describe('MCP Server Integration Tests', () => {
       describe('Complex Scenarios', () => {
         it('should handle a complete workflow', async () => {
           // 1. Create entities
-          await callTool('create_entities', {
+          await callTool('memory__create_entities', {
             entities: [
               {
                 name: 'Project Alpha',
@@ -419,7 +419,7 @@ describe('MCP Server Integration Tests', () => {
           });
 
           // 2. Create relations
-          await callTool('create_relations', {
+          await callTool('memory__create_relations', {
             relations: [
               {
                 from: 'John Doe',
@@ -435,7 +435,7 @@ describe('MCP Server Integration Tests', () => {
           });
 
           // 3. Add more observations
-          await callTool('add_observations', {
+          await callTool('memory__add_observations', {
             observations: [{
               entityName: 'Project Alpha',
               contents: ['Deployed to production', 'Serves 1000 users'],
@@ -443,19 +443,19 @@ describe('MCP Server Integration Tests', () => {
           });
 
           // 4. Search for AI-related nodes
-          const searchResult = await callTool('search_nodes', {
+          const searchResult = await callTool('memory__search_nodes', {
             query: 'AI',
           });
           expect(searchResult.entities).toHaveLength(3); // Project Alpha, John Doe (AI expert), and AI Module
 
           // 5. Get statistics
-          const stats = await callTool('get_stats', {});
+          const stats = await callTool('memory__get_stats', {});
           expect(stats.entityCount).toBe(3);
           expect(stats.relationCount).toBe(2);
           expect(stats.observationCount).toBe(8);
 
           // 6. Read full graph
-          const graph = await callTool('read_graph', {});
+          const graph = await callTool('memory__read_graph', {});
           expect(graph.entities).toHaveLength(3);
           expect(graph.relations).toHaveLength(2);
         });
