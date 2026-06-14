@@ -20,7 +20,31 @@ interface SessionData {
 }
 
 const app = express();
-app.use(express.json());
+
+// Cap request body size to avoid unbounded-payload memory pressure. Configurable
+// because some callers legitimately send large batches.
+app.use(express.json({ limit: process.env.HTTP_BODY_LIMIT || '1mb' }));
+
+// Optional bearer-token auth. Disabled by default (suitable for the trusted/
+// localhost deployments this transport targets); set HTTP_AUTH_TOKEN to require
+// `Authorization: Bearer <token>` on all /session endpoints.
+const AUTH_TOKEN = process.env.HTTP_AUTH_TOKEN;
+const requireAuth: express.RequestHandler = (req, res, next) => {
+  if (!AUTH_TOKEN) {
+    next();
+    return;
+  }
+  if (req.headers.authorization === `Bearer ${AUTH_TOKEN}`) {
+    next();
+    return;
+  }
+  res.status(401).json({ error: 'Unauthorized' });
+};
+app.use('/session', requireAuth);
+
+// Origin returned for the SSE stream. Defaults to '*' for backward compatibility;
+// set HTTP_CORS_ORIGIN to lock cross-origin access down to a specific origin.
+const CORS_ORIGIN = process.env.HTTP_CORS_ORIGIN || '*';
 
 const sessions = new Map<string, SessionData>();
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -203,7 +227,7 @@ app.get('/session/:sessionId/events', async (req, res) => {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': CORS_ORIGIN,
   });
 
   sseTransport.setResponse(res);
@@ -250,7 +274,18 @@ app.get('/health', (_req, res) => {
   });
 });
 
-const PORT = process.env.HTTP_PORT || 3000;
+function parsePort(value: string | undefined, fallback: number): number {
+  if (value === undefined || value === '') {
+    return fallback;
+  }
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid HTTP_PORT "${value}": must be an integer between 1 and 65535`);
+  }
+  return port;
+}
+
+const PORT = parsePort(process.env.HTTP_PORT, 3000);
 
 async function closeAll(): Promise<void> {
   if (cleanupInterval) {
@@ -309,12 +344,15 @@ export default async function runHttpServer(): Promise<{ close: () => Promise<vo
     }
   }, 60 * 1000); // Check every minute
 
-  await new Promise<void>((resolve) => {
-    httpServer = app.listen(PORT, () => {
+  await new Promise<void>((resolve, reject) => {
+    const server = app.listen(PORT, () => {
       console.log(`MCP Memory HTTP Server listening on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/health`);
       resolve();
     });
+    // Surface listen failures (e.g. EADDRINUSE) instead of crashing silently.
+    server.on('error', (err) => reject(err));
+    httpServer = server;
   });
 
   return { close: closeAll };

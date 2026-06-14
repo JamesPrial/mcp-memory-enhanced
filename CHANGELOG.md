@@ -51,6 +51,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dead `src/memory/**` tree (excluded from the build, never imported) and stray root
   files (`test-benchmark.ts`, `test-sqlite.ts`, `test-coverage-analysis.md`)
 
+### Security
+- HTTP transport gained opt-in hardening, all disabled by default to preserve the
+  current trusted/localhost behaviour: bearer-token auth via `HTTP_AUTH_TOKEN`,
+  configurable `HTTP_CORS_ORIGIN`, a `HTTP_BODY_LIMIT` request-size cap, `HTTP_PORT`
+  range validation, and surfaced `listen` errors (e.g. `EADDRINUSE`)
+
 ## [1.0.3] - 2026-06-13
 
 ### 📊 Benchmarking & Tooling

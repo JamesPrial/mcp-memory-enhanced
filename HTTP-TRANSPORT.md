@@ -30,6 +30,17 @@ By default, the HTTP server runs on port 3000. You can change this with the `HTT
 HTTP_PORT=8080 TRANSPORT_TYPE=http npm start
 ```
 
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HTTP_PORT` | `3000` | Port for the HTTP/SSE server (must be 1-65535) |
+| `HTTP_BODY_LIMIT` | `1mb` | Maximum accepted JSON request body size |
+| `HTTP_AUTH_TOKEN` | _(unset)_ | If set, all `/session` endpoints require `Authorization: Bearer <token>`. Disabled by default for trusted/localhost use; `/health` is always open |
+| `HTTP_CORS_ORIGIN` | `*` | `Access-Control-Allow-Origin` value sent on the SSE stream; set to a specific origin to restrict cross-origin access |
+
+> **Security note:** This transport is intended for trusted/localhost deployments. If you expose it beyond localhost, set `HTTP_AUTH_TOKEN`, restrict `HTTP_CORS_ORIGIN`, and place it behind a TLS-terminating reverse proxy.
+
 ## API Reference
 
 ### Create Session

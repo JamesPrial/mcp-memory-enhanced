@@ -94,7 +94,7 @@ async function main() {
 
   // Start health check server if port is specified
   const healthPort = parseInt(process.env.PORT || '6970', 10);
-  if (!isNaN(healthPort) && healthPort > 0) {
+  if (!isNaN(healthPort) && healthPort > 0 && healthPort <= 65535) {
     const healthServer = startHealthServer(healthPort, knowledgeGraphManager);
     cleanups.push(() => new Promise<void>((resolve) => healthServer.close(() => resolve())));
   }
