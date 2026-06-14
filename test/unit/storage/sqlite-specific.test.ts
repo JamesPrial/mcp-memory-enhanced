@@ -132,6 +132,41 @@ describe('SQLite-Specific Features', () => {
       expect(results).toHaveLength(20); // 1000 / 50
       expect(duration).toBeLessThan(100); // Should be very fast due to indexes
     });
+
+    it('loads observations with a constant number of queries (no N+1)', async () => {
+      const entities: Entity[] = Array.from({ length: 25 }, (_, i) => ({
+        name: `NPlus1 ${i}`,
+        entityType: 'Test',
+        observations: [`a-${i}`, `b-${i}`, `c-${i}`]
+      }));
+      await storage.createEntities(entities);
+
+      // Instrument every prepared statement's .all() executions during loadGraph.
+      // The old N+1 implementation ran one observation query per entity
+      // (~N executions); the grouped query keeps this a small constant.
+      const db = (storage as unknown as { db: { prepare: (sql: string) => { all: (...a: unknown[]) => unknown } } }).db;
+      const originalPrepare = db.prepare.bind(db);
+      let allCalls = 0;
+      db.prepare = (sql: string) => {
+        const stmt = originalPrepare(sql);
+        const originalAll = stmt.all.bind(stmt);
+        stmt.all = (...args: unknown[]) => {
+          allCalls++;
+          return originalAll(...args);
+        };
+        return stmt;
+      };
+
+      try {
+        const graph = await storage.loadGraph();
+        expect(graph.entities).toHaveLength(25);
+        expect(graph.entities.every(e => e.observations.length === 3)).toBe(true);
+        // entities + grouped observations + relations = 3, independent of N
+        expect(allCalls).toBeLessThanOrEqual(3);
+      } finally {
+        db.prepare = originalPrepare;
+      }
+    });
   });
 
   describe('WAL Mode', () => {
