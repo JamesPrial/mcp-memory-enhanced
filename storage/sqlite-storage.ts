@@ -88,6 +88,41 @@ export class SQLiteStorage implements IStorageBackend {
     `);
   }
 
+  /**
+   * Load observations grouped by entity id in a single query, avoiding an
+   * N+1 query per entity. When entityIds is omitted, every observation is
+   * loaded (used by loadGraph) - this deliberately avoids an `IN (...)`
+   * clause so it never hits SQLite's bound-parameter limit on large graphs.
+   */
+  private groupObservations(entityIds?: number[]): Map<number, string[]> {
+    let rows: Array<{ entity_id: number; content: string }>;
+    if (entityIds === undefined) {
+      rows = this.db.prepare(`
+        SELECT entity_id, content FROM observations
+        ORDER BY entity_id, created_at, id
+      `).all() as Array<{ entity_id: number; content: string }>;
+    } else {
+      if (entityIds.length === 0) return new Map();
+      const placeholders = entityIds.map(() => '?').join(',');
+      rows = this.db.prepare(`
+        SELECT entity_id, content FROM observations
+        WHERE entity_id IN (${placeholders})
+        ORDER BY entity_id, created_at, id
+      `).all(...entityIds) as Array<{ entity_id: number; content: string }>;
+    }
+
+    const byEntity = new Map<number, string[]>();
+    for (const row of rows) {
+      const list = byEntity.get(row.entity_id);
+      if (list) {
+        list.push(row.content);
+      } else {
+        byEntity.set(row.entity_id, [row.content]);
+      }
+    }
+    return byEntity;
+  }
+
   async loadGraph(): Promise<KnowledgeGraph> {
     // Load all entities with their observations
     const entities = this.db.prepare(`
@@ -96,16 +131,13 @@ export class SQLiteStorage implements IStorageBackend {
       ORDER BY e.name
     `).all() as Array<{ id: number; name: string; entity_type: string }>;
 
-    // Load observations for each entity
-    const getObservations = this.db.prepare(`
-      SELECT content FROM observations WHERE entity_id = ? ORDER BY created_at
-    `);
+    // Load all observations in one query and group by entity (avoids N+1).
+    const observationsByEntity = this.groupObservations();
 
     const entitiesWithObservations: Entity[] = entities.map(entity => ({
       name: entity.name,
       entityType: entity.entity_type,
-      observations: (getObservations.all(entity.id) as Array<{ content: string }>)
-        .map(obs => obs.content)
+      observations: observationsByEntity.get(entity.id) ?? []
     }));
 
     // Load all relations
@@ -338,16 +370,13 @@ export class SQLiteStorage implements IStorageBackend {
       entity_type: string;
     }>;
 
-    // Get observations for each entity
-    const getObservations = this.db.prepare(`
-      SELECT content FROM observations WHERE entity_id = ? ORDER BY created_at
-    `);
+    // Group observations for the matched entities in one query (avoids N+1).
+    const observationsByEntity = this.groupObservations(searchResults.map(e => e.id));
 
     return searchResults.map(entity => ({
       name: entity.name,
       entityType: entity.entity_type,
-      observations: (getObservations.all(entity.id) as Array<{ content: string }>)
-        .map(obs => obs.content)
+      observations: observationsByEntity.get(entity.id) ?? []
     }));
   }
 
@@ -362,15 +391,12 @@ export class SQLiteStorage implements IStorageBackend {
       ORDER BY name
     `).all(...names) as Array<{ id: number; name: string; entity_type: string }>;
 
-    const getObservations = this.db.prepare(`
-      SELECT content FROM observations WHERE entity_id = ? ORDER BY created_at
-    `);
+    const observationsByEntity = this.groupObservations(entities.map(e => e.id));
 
     return entities.map(entity => ({
       name: entity.name,
       entityType: entity.entity_type,
-      observations: (getObservations.all(entity.id) as Array<{ content: string }>)
-        .map(obs => obs.content)
+      observations: observationsByEntity.get(entity.id) ?? []
     }));
   }
 
