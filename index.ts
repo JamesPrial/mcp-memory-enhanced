@@ -15,10 +15,39 @@ import { VERSION } from './version.js';
 // Initialize storage backend and knowledge graph manager
 let knowledgeGraphManager: KnowledgeGraphManager;
 
+// Cleanup callbacks run (in reverse order) on graceful shutdown.
+const cleanups: Array<() => Promise<void> | void> = [];
+let shuttingDown = false;
+
+async function shutdown(reason: string, code = 0): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.error(`Shutting down (${reason})...`);
+  for (const cleanup of [...cleanups].reverse()) {
+    try {
+      await cleanup();
+    } catch (err) {
+      console.error('Error during shutdown cleanup:', err);
+    }
+  }
+  process.exit(code);
+}
+
+process.on('SIGINT', () => { void shutdown('SIGINT'); });
+process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+  void shutdown('uncaughtException', 1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
+
 async function initializeStorage() {
   const storage = createStorageFromEnv();
   await storage.initialize();
   knowledgeGraphManager = new KnowledgeGraphManager(storage);
+  cleanups.push(() => storage.close());
 
   // Log storage type for debugging
   const storageType = process.env.STORAGE_TYPE || 'json';
@@ -55,7 +84,8 @@ async function main() {
   if (transportType === 'http' || transportType === 'sse') {
     // Use dynamic import for HTTP server
     const { default: runHttpServer } = await import('./http-server.js');
-    runHttpServer();
+    const handle = await runHttpServer();
+    cleanups.push(() => handle.close());
     return;
   }
 
@@ -65,7 +95,8 @@ async function main() {
   // Start health check server if port is specified
   const healthPort = parseInt(process.env.PORT || '6970', 10);
   if (!isNaN(healthPort) && healthPort > 0) {
-    startHealthServer(healthPort, knowledgeGraphManager);
+    const healthServer = startHealthServer(healthPort, knowledgeGraphManager);
+    cleanups.push(() => new Promise<void>((resolve) => healthServer.close(() => resolve())));
   }
 
   const transport = new StdioServerTransport();

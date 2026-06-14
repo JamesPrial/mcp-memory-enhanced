@@ -9,11 +9,13 @@ import {
 import { memoryTools, callMemoryTool } from './tools.js';
 import { VERSION } from './version.js';
 
-export async function createServerFromFactory(): Promise<Server> {
-  const storage: IStorageBackend = createStorageFromEnv();
-  await storage.initialize();
-  const manager = new KnowledgeGraphManager(storage);
-
+/**
+ * Build an MCP server bound to an existing KnowledgeGraphManager. Tool
+ * definitions and dispatch are shared with the stdio transport via ./tools.ts
+ * so the two transports can never drift. Callers that handle many sessions
+ * should share one manager (and therefore one storage backend) across them.
+ */
+export function createMemoryServer(manager: KnowledgeGraphManager): Server {
   const server = new Server(
     {
       name: 'memory',
@@ -26,8 +28,6 @@ export async function createServerFromFactory(): Promise<Server> {
     }
   );
 
-  // Tool definitions and dispatch are shared with the stdio transport via
-  // ./tools.ts so the two transports can never drift.
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return { tools: memoryTools };
   });
@@ -38,4 +38,16 @@ export async function createServerFromFactory(): Promise<Server> {
   });
 
   return server;
+}
+
+/**
+ * Convenience factory that creates a storage backend from the environment and
+ * returns a server bound to it. Each call creates its own backend, so prefer
+ * createMemoryServer with a shared manager when serving multiple sessions.
+ */
+export async function createServerFromFactory(): Promise<Server> {
+  const storage: IStorageBackend = createStorageFromEnv();
+  await storage.initialize();
+  const manager = new KnowledgeGraphManager(storage);
+  return createMemoryServer(manager);
 }
