@@ -8,7 +8,8 @@ import {
   DeleteRelationsSchema,
   ReadGraphSchema,
   SearchNodesSchema,
-  OpenNodesSchema
+  OpenNodesSchema,
+  GetStatsSchema
 } from '../../server-factory-schemas.js';
 
 describe('server-factory-schemas', () => {
@@ -149,6 +150,17 @@ describe('server-factory-schemas', () => {
 
     it('should not have required fields', () => {
       expect(ReadGraphSchema.required).toBeUndefined();
+    });
+  });
+
+  describe('GetStatsSchema', () => {
+    it('should have correct structure', () => {
+      expect(GetStatsSchema.type).toBe('object');
+      expect(GetStatsSchema.properties).toEqual({});
+    });
+
+    it('should not have required fields', () => {
+      expect((GetStatsSchema as { required?: unknown }).required).toBeUndefined();
     });
   });
 

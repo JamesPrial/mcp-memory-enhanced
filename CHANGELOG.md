@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### ⚠️ Breaking Changes
+- **Tool names are now namespaced with the `memory__` prefix on every transport.**
+  The stdio transport previously exposed unprefixed names (`create_entities`,
+  `read_graph`, ...); it now matches the HTTP/SSE transport (`memory__create_entities`,
+  `memory__read_graph`, ...). MCP clients that discover tools dynamically are
+  unaffected; any client, script, or allow-list that hard-codes the old stdio names
+  must be updated.
+
+### Added
+- `memory__get_stats` is now exposed over HTTP/SSE as well (previously stdio-only), so
+  both transports expose the same 10 tools
+- Shared tool module (`tools.ts`) used by both transports, removing duplicated tool
+  definitions and dispatch logic that could drift between transports
+- JSON-storage durability tests and a SQLite N+1 regression test
+- `.dockerignore`
+
+### Changed
+- The server version reported to MCP clients is now read from `package.json` (single
+  source of truth) instead of a hard-coded string that had drifted to `0.6.3`
+- Coverage thresholds aligned to 85% lines / 85% functions / 80% branches across
+  vitest, CI, and docs
+
+### Fixed
+- **JSON storage durability** - writes are now atomic (temp file + fsync + rename) and
+  serialized, so concurrent tool calls can no longer lose data and a crash mid-write
+  can no longer corrupt the JSONL file; parse errors now report the offending line
+- Resolved unresolved git merge-conflict markers shipped in `README.md`
+- Build now cleans `dist/` first, so stale/test artifacts are no longer published
+
+### Performance
+- Eliminated the SQLite N+1 observation query in `loadGraph`, `searchEntities`, and
+  `getEntities` (one grouped query instead of one query per entity)
+
+### Removed
+- Dead `src/memory/**` tree (excluded from the build, never imported) and stray root
+  files (`test-benchmark.ts`, `test-sqlite.ts`, `test-coverage-analysis.md`)
+
 ## [1.0.3] - 2026-06-13
 
 ### 📊 Benchmarking & Tooling
