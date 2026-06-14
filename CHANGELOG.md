@@ -35,6 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   can no longer corrupt the JSONL file; parse errors now report the offending line
 - Resolved unresolved git merge-conflict markers shipped in `README.md`
 - Build now cleans `dist/` first, so stale/test artifacts are no longer published
+- **Graceful shutdown** - the server now handles SIGINT/SIGTERM, closing the storage
+  backend (whose `close()` was previously never called) and the health/HTTP servers
+- **HTTP session resource leak** - all HTTP/SSE sessions now share one storage backend
+  instead of each opening (and never closing) its own backend, which for SQLite leaked
+  a database connection per session
+- The SSE `/events` endpoint now rejects a second concurrent stream for a session
+  instead of connecting the server to a second transport and leaking the first stream
 
 ### Performance
 - Eliminated the SQLite N+1 observation query in `loadGraph`, `searchEntities`, and
